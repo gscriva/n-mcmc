@@ -1,0 +1,35 @@
+_target_: src.datamodules.ising_datamodule.ISINGDataModule
+
+datasets:
+  train:
+    _target_: src.datamodules.datasets.ising_dataset.ISINGDataset
+    name: train_100_lattice_2d_ising_spins
+    path: ${oc.env:TRAIN_DATASET_PATH}
+    input_size: ${model.input_size}
+    model: ${model._target_}
+
+  val:
+    _target_: src.datamodules.datasets.ising_dataset.ISINGDataset
+    name: val_100_lattice_2d_ising_spins
+    path: ${oc.env:VAL_DATASET_PATH}
+    input_size: ${model.input_size}
+    model: ${model._target_}
+
+  test:
+    _target_: src.datamodules.datasets.ising_dataset.ISINGDataset
+    name: test_100_lattice_2d_ising_spins
+    path: ${oc.env:TEST_DATASET_PATH}
+    input_size: ${model.input_size}
+    model: ${model._target_}
+
+  # data_dir: ${data_dir} # data_dir is specified in config.yaml
+
+num_workers:
+  train: 4
+  val: 4
+  test: 4
+
+batch_size:
+  train: 64
+  val: 128
+  test: 128

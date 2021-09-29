@@ -28,16 +28,18 @@ def train(config: DictConfig) -> Optional[float]:
     """
 
     # Set seed for random number generators in pytorch, numpy and python.random
-    if "seed" in config:
+    if config.get("seed"):
         seed_everything(config.seed, workers=True)
 
     # Init lightning datamodule
     log.info(f"Instantiating datamodule <{config.datamodule._target_}>")
-    datamodule: LightningDataModule = hydra.utils.instantiate(config.datamodule)
+    datamodule: LightningDataModule = hydra.utils.instantiate(
+        config.datamodule, _recursive_=False
+    )
 
     # Init lightning model
     log.info(f"Instantiating model <{config.model._target_}>")
-    model: LightningModule = hydra.utils.instantiate(config.model)
+    model: LightningModule = hydra.utils.instantiate(config.model, _recursive_=False)
 
     # Init lightning callbacks
     callbacks: List[Callback] = []

@@ -20,7 +20,7 @@ def main(config: DictConfig):
     # - easier access to debug mode
     # - forcing debug friendly configuration
     # You can safely get rid of this line if you don't want those
-    utils.extras(config)
+    # utils.extras(config)
 
     # Pretty print config using Rich library
     if config.get("print_config"):

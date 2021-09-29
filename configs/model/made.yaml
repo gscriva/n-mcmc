@@ -1,0 +1,26 @@
+_target_: src.models.made.Made
+input_size: 100
+hidd_layers: 1
+hidd_neurons: 500
+activation: "ReLU"
+natural_ordering: True
+num_masks: 1
+mask_seed: ${seed}
+resample_every: 100
+
+optim:
+  optimizer:
+    _target_: torch.optim.Adam
+    lr: 0.001
+    betas: [0.9,0.999]
+    eps: 1e-8
+    weight_decay: 0
+
+  use_lr_scheduler: False
+
+  lr_scheduler:
+    _target_: torch.optim.lr_scheduler.CosineAnnealingLR
+    T_max: ${trainer.max_epochs}
+    eta_min: 0 # min learning rate
+    last_epoch: -1
+    verbose: False

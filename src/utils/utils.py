@@ -8,6 +8,8 @@ import rich.syntax
 import rich.tree
 from omegaconf import DictConfig, OmegaConf
 from pytorch_lightning.utilities import rank_zero_only
+from torch.nn import BCEWithLogitsLoss
+from torch.tensor import Tensor
 
 
 def get_logger(name=__name__, level=logging.INFO) -> logging.Logger:
@@ -18,7 +20,15 @@ def get_logger(name=__name__, level=logging.INFO) -> logging.Logger:
 
     # this ensures all logging levels get marked with the rank zero decorator
     # otherwise logs would get multiplied for each GPU process in multi-GPU setup
-    for level in ("debug", "info", "warning", "error", "exception", "fatal", "critical"):
+    for level in (
+        "debug",
+        "info",
+        "warning",
+        "error",
+        "exception",
+        "fatal",
+        "critical",
+    ):
         setattr(logger, level, rank_zero_only(getattr(logger, level)))
 
     return logger
@@ -49,11 +59,16 @@ def extras(config: DictConfig) -> None:
     # set <config.trainer.fast_dev_run=True> if <config.debug=True>
     if config.get("debug"):
         log.info("Running in debug mode! <config.debug=True>")
-        config.trainer.fast_dev_run = True
+
+    # if <config.name=...>
+    if config.get("name"):
+        log.info("Running in experiment mode! Name: {}".format(config.name))
 
     # force debugger friendly configuration if <config.trainer.fast_dev_run=True>
     if config.trainer.get("fast_dev_run"):
-        log.info("Forcing debugger friendly configuration! <config.trainer.fast_dev_run=True>")
+        log.info(
+            "Forcing debugger friendly configuration! <config.trainer.fast_dev_run=True>"
+        )
         # Debuggers don't like GPUs or multiprocessing
         if config.trainer.get("gpus"):
             config.trainer.gpus = 0
@@ -74,8 +89,10 @@ def print_config(
         "model",
         "datamodule",
         "callbacks",
+        "test_after_training",
         "logger",
         "seed",
+        "name",
     ),
     resolve: bool = True,
 ) -> None:
@@ -171,3 +188,20 @@ def finish(
             import wandb
 
             wandb.finish()
+
+
+def compute_prob(logits: Tensor, x: Tensor) -> Tensor:
+    """Compute the probability of a sample using a PyTorch routine.
+
+    Args:
+        logits (Tensor): Logits as computed by the model.
+        x (Tensor): Samples in binary form.
+
+    Returns:
+        float: Log probabilities of the samples.
+    """
+    # BCEWithLogitsLoss with reduction='none' is nothing than
+    # the positive log-likelihood of the sample
+    criterion = BCEWithLogitsLoss(reduction="none")
+    log_prob = -criterion(logits, x)
+    return log_prob.sum(dim=-1)

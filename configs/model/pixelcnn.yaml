@@ -1,0 +1,28 @@
+_target_: src.models.pixel_cnn.PixelCNN
+input_size: 10
+net_depth: 5
+net_width: 16
+activation: "silu"
+kernel_size: 7
+bias: False
+res_block: True
+final_conv: True
+
+optim: 
+  optimizer:
+    _target_: torch.optim.Adam
+    lr: 0.001
+    betas: [0.9,0.999]
+    eps: 1e-8
+    weight_decay: 0 
+  
+  use_lr_scheduler: True
+
+  lr_scheduler:
+    _target_: torch.optim.lr_scheduler.CosineAnnealingWarmRestarts
+    T_0: 10
+    T_mult: 2
+    eta_min: 0 # min value for the lr
+    last_epoch: -1
+    verbose: False
+
