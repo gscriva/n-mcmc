@@ -50,22 +50,17 @@ class MadeModel(nn.Module):
 
         # create a generator of pseudo-random number
         # with a controlled seed
-        print(hparams["mask_seed"], self.seed)
         generator = torch.Generator()
         generator.manual_seed(hparams["mask_seed"] + self.seed)
         # use as many seed as needed
         # and recreate each time masks to save memory
         self.seed = (self.seed + 1) % hparams["num_masks"]
 
-        print(hparams["mask_seed"], self.seed)
-        print(f"L= {hparams['hidd_layers']} ")
-
         # use the input's natural order or permute the input state
         if hparams["natural_ordering"]:
             self.m[-1] = torch.arange(hparams["input_size"], dtype=torch.int)
         else:
             self.m[-1] = torch.randperm(hparams["input_size"], dtype=torch.int)
-        print(f"m[-1]: {self.m[-1]}")
 
         # create mask for each layer
         # to avoid unconnected units we take the minimum of the prevoius layer

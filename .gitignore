@@ -143,5 +143,6 @@ dmypy.json
 data/
 logs/
 wandb/
+lightning_logs/
 .env
 .autoenv

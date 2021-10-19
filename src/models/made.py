@@ -30,26 +30,6 @@ class Made(LightningModule):
     def forward(self, x: Tensor) -> Tensor:
         return self.model(x)
 
-    def sample(self, num_sample: int) -> Dict[ndarray, ndarray]:
-        # initialize the samples
-        x = torch.zeros(
-            (num_sample, self.hparams.input_size),
-            device=self.device,
-        )
-
-        prog_bar = trange(self.hparams.input_size, leave=True)
-        for d in prog_bar:
-            logits = self.forward(x)
-            # generate x_hat according to the compute probability
-            x[:, d] = torch.bernoulli(torch.sigmoid(logits[:, d])).detach()
-        # compute the robability of the sample
-        log_prob = compute_prob(logits, x)
-
-        input_side = int(sqrt(self.hparams.input_size))
-        # output should be {-1,+1}, spin convention
-        x = x.view((-1, input_side, input_side)) * 2 - 1
-        return {"sample": x.detach().numpy(), "log_prob": log_prob.detach().numpy()}
-
     def step(self, x: Tensor):
         logits = self.forward(x)
 
@@ -96,6 +76,21 @@ class Made(LightningModule):
 
     def test_epoch_end(self, outputs: List[Any]):
         pass
+
+    def predict_step(self, batch, batch_idx: int, dataloader_idx: int = None):
+        from tqdm import trange
+
+        for spin in trange(self.hparams.input_size, leave=False):
+            logits = self.forward(batch)
+            # generate x_hat according to the compute probability
+            batch[:, spin] = torch.bernoulli(torch.sigmoid(logits[:, spin]))
+        # compute the robability of the sample
+        log_prob = compute_prob(logits, batch)
+
+        input_side = int(sqrt(self.hparams.input_size))
+        # output should be {-1,+1}, spin convention
+        batch = batch.view((-1, input_side, input_side)) * 2 - 1
+        return {"sample": batch.detach().numpy(), "log_prob": log_prob.detach().numpy()}
 
     def configure_optimizers(
         self,
