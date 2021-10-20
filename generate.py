@@ -84,12 +84,19 @@ def generate(args: argparse.ArgumentParser):
     print(f"\nGenerating sample")
 
     trainer = Trainer()
-    out = trainer.predict(
+    pred = trainer.predict(
         model=trained_model, dataloaders=dataloader, ckpt_path=args.ckpt_path
     )
 
     save_path = "."
     size = trained_model.hparams.input_size
+
+    out = {"sample": pred[0]["sample"], "log_prob": pred[0]["log_prob"]}
+
+    # create a unique dataset for mcmc
+    for batch in pred[0:]:
+        out["sample"] = np.append(out["sample"], batch["sample"], axis=0)
+        out["log_prob"] = np.append(out["log_prob"], batch["log_prob"], axis=0)
 
     if args.save_sample:
         save_name = (
