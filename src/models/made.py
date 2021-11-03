@@ -78,8 +78,6 @@ class Made(LightningModule):
         pass
 
     def predict_step(self, batch, batch_idx: int, dataloader_idx: int = None):
-        from tqdm import trange
-
         for spin in trange(self.hparams.input_size, leave=False):
             logits = self.forward(batch)
             # generate x_hat according to the compute probability
