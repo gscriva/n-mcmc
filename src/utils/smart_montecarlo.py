@@ -12,9 +12,9 @@ from tqdm import trange
 parser = argparse.ArgumentParser()
 
 parser.add_argument("--beta", type=float, help="Inverse temperature")
-parser.add_argument("--num_mc_steps", type=int, help="Montecarlo steps")
+parser.add_argument("--num-mc-steps", type=int, help="Montecarlo steps")
 parser.add_argument(
-    "--sample_path",
+    "--sample-path",
     type=str,
     help="Path to the saved proposals or saved proposal themself",
 )
@@ -78,6 +78,41 @@ def compute_eng(Lx: int, J: np.ndarray, S0: np.ndarray) -> float:
     return energy / (Lx ** 2)
 
 
+# @jit(nopython=True)
+def compute_eng_open(Lx: int, J: np.ndarray, S0: np.ndarray) -> float:
+    energy = 0.0
+    for kx in range(Lx):
+        for ky in range(Lx):
+
+            k = kx + (Lx * ky)
+            R = kx + 1  # right spin
+            L = kx - 1  # left spin
+            U = ky - 1  # up spin
+            D = ky + 1  # down spin
+
+            kR = k - ky  # coupling to the right of S0[kx,ky]
+            kU = k - Lx  # coupling to the up of S0[kx,ky]
+            kL = k - ky - 1  # coupling to the left of S0[kx,ky]
+            kD = k  # coupling to the down of S0[kx,ky]
+
+            try:
+                # Tries to find a spin to right, if no spin, contribution is 0.
+                Rs = S0[R, ky] * J[kR, 0]
+            except:
+                # print(S0[R, ky], J[kR, 0])
+                Rs = 0.0
+
+            try:
+                Ds = S0[kx, D] * J[kD, 1]
+            except:
+                Ds = 0.0
+
+            nb = Rs + Ds  # + Ls + Us
+            S = S0[kx, ky]
+            energy += -S * nb
+    return energy / (Lx ** 2)
+
+
 @jit(nopython=True)
 def get_couplings(L: int, seed: int) -> np.ndarray:
     """Returns random couplings according to the given seed.
@@ -91,6 +126,21 @@ def get_couplings(L: int, seed: int) -> np.ndarray:
     """
     np.random.seed(seed)
     return np.random.normal(loc=0.0, scale=1.0, size=(L ** 2, 2))
+
+
+@jit(nopython=True)
+def get_couplings_open(L: int, seed: int) -> np.ndarray:
+    """Returns random couplings according to the given seed.
+
+    Args:
+        L (int): Square root of the number of spins.
+        seed (int): Seed to generated random couplings.
+
+    Returns:
+        np.ndarray: Random couplings matrix.
+    """
+    np.random.seed(seed)
+    return np.random.normal(0.0, 1.0, size=(L ** 2 - L, 2))
 
 
 def load_data(
@@ -113,7 +163,11 @@ def load_data(
         data = sample_path
     else:
         raise ValueError("Neither a path or a Numpy dataset!")
-    return data["sample"], data["log_prob"]
+    size = data["sample"].shape[-1]
+    return (
+        np.reshape(data["sample"], (-1, size, size), order="F"),
+        data["log_prob"],
+    )
 
 
 @jit(nopython=True)
@@ -148,7 +202,7 @@ def mcmc(
         save (bool, optional): Set True to save data after simulation. Defaults to False.
     """
 
-    # load data generate by PixelCNN
+    # load data generate by the NN
     proposals, log_probs = load_data(sample_path)
 
     # get the first sample and its energy
@@ -158,7 +212,7 @@ def mcmc(
     L = accepted_sample.shape[-1]
 
     # get the coupling matrix
-    J = get_couplings(L, seed)
+    J = get_couplings_open(L, seed)
 
     # initialisation
     energies = []
@@ -168,7 +222,7 @@ def mcmc(
     accepted = 0
 
     # compute the energy of the new configuration
-    accepted_eng = compute_eng(L, J, accepted_sample)
+    accepted_eng = compute_eng_open(L, J, accepted_sample)
     # compute boltzmann probability
     accepted_boltz_log_prob = compute_prob(accepted_eng, beta, L ** 2)
 
@@ -182,7 +236,7 @@ def mcmc(
             print("NAN in log_prob")
             continue
 
-        trial_eng = compute_eng(L, J, trial_sample)
+        trial_eng = compute_eng_open(L, J, trial_sample)
         # compute Boltzmann probability
         trial_boltz_log_prob = compute_prob(trial_eng, beta, L ** 2)
 
@@ -216,7 +270,7 @@ def mcmc(
             # update mean and std of energies for print
             avg_eng, std_eng = compute_avg_std(np.asarray(energies))
             print(
-                f"\n\nStep {idx+1}\nAccepted energy {accepted_eng}\nAverage energy {avg_eng}\nStd energy {std_eng}"
+                f"\n\nStep {idx+1}\nAccepted energy {accepted_eng*L**2}\nAverage energy {avg_eng*L**2}\nStd energy {std_eng}"
             )
 
     if save:

@@ -1,12 +1,11 @@
 from typing import Any, List, Tuple, Dict
 from math import sqrt
 
+import numpy as np
 import torch
 import hydra
 from pytorch_lightning import LightningModule
 from torch import nn
-from numpy import ndarray
-from torch._C import device
 from torch.functional import Tensor
 from torch.optim import Optimizer
 from tqdm import trange
@@ -82,13 +81,18 @@ class Made(LightningModule):
             logits = self.forward(batch)
             # generate x_hat according to the compute probability
             batch[:, spin] = torch.bernoulli(torch.sigmoid(logits[:, spin]))
+
         # compute the robability of the sample
         log_prob = compute_prob(logits, batch)
 
         input_side = int(sqrt(self.hparams.input_size))
         # output should be {-1,+1}, spin convention
-        batch = batch.view((-1, input_side, input_side)) * 2 - 1
-        return {"sample": batch.detach().numpy(), "log_prob": log_prob.detach().numpy()}
+        # and for dwave data must be fortran contiguous
+        batch = np.reshape(batch, (-1, input_side, input_side), order="F") * 2 - 1
+        return {
+            "sample": batch.detach().cpu().numpy(),
+            "log_prob": log_prob.detach().cpu().numpy(),
+        }
 
     def configure_optimizers(
         self,
