@@ -7,7 +7,7 @@ min_epochs: 1
 max_epochs: 30
 
 weights_summary: "top"
-progress_bar_refresh_rate: 10
+progress_bar_refresh_rate: 50
 resume_from_checkpoint: null
 
 
