@@ -78,7 +78,7 @@ def compute_eng(Lx: int, J: np.ndarray, S0: np.ndarray) -> float:
     return energy / (Lx ** 2)
 
 
-# @jit(nopython=True)
+@jit(nopython=True)
 def compute_eng_open(Lx: int, J: np.ndarray, S0: np.ndarray) -> float:
     energy = 0.0
     for kx in range(Lx):
@@ -86,30 +86,17 @@ def compute_eng_open(Lx: int, J: np.ndarray, S0: np.ndarray) -> float:
 
             k = kx + (Lx * ky)
             R = kx + 1  # right spin
-            L = kx - 1  # left spin
-            U = ky - 1  # up spin
             D = ky + 1  # down spin
 
             kR = k - ky  # coupling to the right of S0[kx,ky]
-            kU = k - Lx  # coupling to the up of S0[kx,ky]
-            kL = k - ky - 1  # coupling to the left of S0[kx,ky]
             kD = k  # coupling to the down of S0[kx,ky]
 
-            try:
-                # Tries to find a spin to right, if no spin, contribution is 0.
-                Rs = S0[R, ky] * J[kR, 0]
-            except:
-                # print(S0[R, ky], J[kR, 0])
-                Rs = 0.0
+            # Tries to find a spin to right, if no spin, contribution is 0.
+            Rs = S0[R, ky] * J[kR, 0] if R % Lx != 0 else 0
+            # Tries to find a spin to left, if no spin, contribution is 0.
+            Ds = S0[kx, D] * J[kD, 1] if D % Lx != 0 else 0
 
-            try:
-                Ds = S0[kx, D] * J[kD, 1]
-            except:
-                Ds = 0.0
-
-            nb = Rs + Ds  # + Ls + Us
-            S = S0[kx, ky]
-            energy += -S * nb
+            energy += -S0[kx, ky] * (Rs + Ds)
     return energy / (Lx ** 2)
 
 
@@ -205,8 +192,10 @@ def mcmc(
     # load data generate by the NN
     proposals, log_probs = load_data(sample_path)
 
+    accepted_log_prob = np.nan
     # get the first sample and its energy
-    accepted_sample, accepted_log_prob = proposals[0], log_probs[0]
+    while np.isnan(accepted_log_prob):
+        accepted_sample, accepted_log_prob = proposals[0], log_probs[0]
 
     # get the dimension of the sample from the
     L = accepted_sample.shape[-1]
@@ -232,13 +221,20 @@ def mcmc(
         # get next sample and its energy
         trial_sample, trial_log_prob = proposals[idx + 1], log_probs[idx + 1]
 
-        if trial_log_prob == np.nan:
+        if np.isnan(trial_log_prob) and verbose:
             print("NAN in log_prob")
             continue
 
         trial_eng = compute_eng_open(L, J, trial_sample)
+        if np.isnan(trial_eng) and verbose:
+            print("NAN in trial_eng")
+            continue
+
         # compute Boltzmann probability
         trial_boltz_log_prob = compute_prob(trial_eng, beta, L ** 2)
+        if np.isnan(trial_boltz_log_prob) and verbose:
+            print("NAN in trial_boltz_log_prob")
+            continue
 
         # get the transition probability
         prob_ratio.append(
@@ -249,6 +245,10 @@ def mcmc(
                 - accepted_boltz_log_prob
             )
         )
+        if np.isnan(prob_ratio[idx]) and args.verbose:
+            print("NAN in prob_ratio")
+            continue
+
         transition_prob.append(min(1.0, prob_ratio[idx]))
 
         if (
@@ -270,7 +270,7 @@ def mcmc(
             # update mean and std of energies for print
             avg_eng, std_eng = compute_avg_std(np.asarray(energies))
             print(
-                f"\n\nStep {idx+1}\nAccepted energy {accepted_eng*L**2}\nAverage energy {avg_eng*L**2}\nStd energy {std_eng}"
+                f"\n\nStep {idx+1}\nAccepted energy {accepted_eng}\nAverage energy {avg_eng}\nStd energy {std_eng}"
             )
 
     if save:

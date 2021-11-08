@@ -9,7 +9,7 @@ defaults:
   - override /hydra/sweeper: optuna
 
 # choose metric which will be optimized by Optuna
-optimized_metric: "val/acc"
+optimized_metric: "val/loss"
 
 hydra:
   # here we define Optuna hyperparameter search
@@ -20,12 +20,8 @@ hydra:
     storage: null
     study_name: null
     n_jobs: 1
-
-    # 'minimize' or 'maximize' the objective
-    direction: minimize
-
-    # number of experiments that will be executed
-    n_trials: 20
+    direction: minimize  # 'minimize' or 'maximize' the objective  
+    n_trials: 20 # number of experiments that will be executed
 
     # choose Optuna hyperparameter sampler
     # learn more here: https://optuna.readthedocs.io/en/stable/reference/samplers.html
@@ -45,7 +41,7 @@ hydra:
     search_space:
       datamodule.batch_size.train:
         type: categorical
-        choices: [32, 64, 128]
+        choices: [64, 128, 256]
       model.optim.optimizer.lr:
         type: float
         low: 0.0001
@@ -58,4 +54,4 @@ hydra:
         choices: [2048, 2560, 3072, 3584]
       model.activation:
         type: categorical
-        choices: ["ReLU", "SiLU", "ELU"]
+        choices: ["ReLU", "SiLU"]
