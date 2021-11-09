@@ -83,18 +83,14 @@ def compute_eng_open(Lx: int, J: np.ndarray, S0: np.ndarray) -> float:
     energy = 0.0
     for kx in range(Lx):
         for ky in range(Lx):
-
             k = kx + (Lx * ky)
-            R = kx + 1  # right spin
-            D = ky + 1  # down spin
-
             kR = k - ky  # coupling to the right of S0[kx,ky]
             kD = k  # coupling to the down of S0[kx,ky]
 
-            # Tries to find a spin to right, if no spin, contribution is 0.
-            Rs = S0[R, ky] * J[kR, 0] if R % Lx != 0 else 0
-            # Tries to find a spin to left, if no spin, contribution is 0.
-            Ds = S0[kx, D] * J[kD, 1] if D % Lx != 0 else 0
+            # Tries to find a spin to right, if no spin energy contribution is 0.
+            Rs = S0[kx + 1, ky] * J[kR, 0] if (kx + 1) % Lx != 0 else 0
+            # Tries to find a spin to left, if no spin energy contribution is 0.
+            Ds = S0[kx, ky + 1] * J[kD, 1] if (ky + 1) % Lx != 0 else 0
 
             energy += -S0[kx, ky] * (Rs + Ds)
     return energy / (Lx ** 2)
@@ -220,7 +216,6 @@ def mcmc(
     for idx in trange(num_mc_steps, leave=True):
         # get next sample and its energy
         trial_sample, trial_log_prob = proposals[idx + 1], log_probs[idx + 1]
-
         if np.isnan(trial_log_prob) and verbose:
             print("NAN in log_prob")
             continue
@@ -277,21 +272,16 @@ def mcmc(
         avg_eng, std_eng = compute_avg_std(np.asarray(energies))
         # use path class
         sample_path = Path(sample_path)
-        filename = (
-            str(L ** 2)
-            + "_lattice_2d_ising_spins_PIXELMCMC"
-            + sample_path.parts[-1].split("-")[-1][:-4]
-            + ".npy"
-        )
+        filename = f"{str(L ** 2)}spins_beta{beta}_neural-mcmc_{num_mc_steps}steps"
         out = {
             "accepted": accepted,
             "avg_eng": avg_eng,
             "std_eng": std_eng,
-            "samples": samples,
-            "energies": energies,
+            "sample": samples,
+            "energy": energies,
         }
         print("\nSaving MCMC output as {0}".format(filename))
-        np.savez(filename, out)
+        np.savez(filename, **out)
 
     print(
         "\nAccepted proposals: {0} ({1} %)\n".format(
