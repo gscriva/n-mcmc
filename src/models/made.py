@@ -83,15 +83,16 @@ class Made(LightningModule):
             batch[:, spin] = torch.bernoulli(torch.sigmoid(logits[:, spin]))
 
         # compute the robability of the sample
-        log_prob = compute_prob(logits, batch)
+        log_prob = compute_prob(logits, batch).detach().cpu().numpy()
 
         input_side = int(sqrt(self.hparams.input_size))
         # output should be {-1,+1}, spin convention
         # and for dwave data must be fortran contiguous
+        batch = batch.detach().cpu().numpy()
         batch = np.reshape(batch, (-1, input_side, input_side), order="F") * 2 - 1
         return {
-            "sample": batch.detach().cpu().numpy(),
-            "log_prob": log_prob.detach().cpu().numpy(),
+            "sample": batch,
+            "log_prob": log_prob,
         }
 
     def configure_optimizers(
