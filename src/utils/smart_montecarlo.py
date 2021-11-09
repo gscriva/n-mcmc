@@ -211,9 +211,9 @@ def mcmc(
     # compute boltzmann probability
     accepted_boltz_log_prob = compute_prob(accepted_eng, beta, L ** 2)
 
-    print(f"\nPerforming MCMC")
+    print(f"\nPerforming MCMC at beta={beta}")
 
-    for idx in trange(num_mc_steps, leave=True):
+    for idx in trange(num_mc_steps, leave=False):
         # get next sample and its energy
         trial_sample, trial_log_prob = proposals[idx + 1], log_probs[idx + 1]
         if np.isnan(trial_log_prob) and verbose:
@@ -284,7 +284,7 @@ def mcmc(
         np.savez(filename, **out)
 
     print(
-        "\nAccepted proposals: {0} ({1} %)\n".format(
+        "Accepted proposals: {0} ({1} %)\n\n".format(
             accepted, accepted / num_mc_steps * 100
         )
     )
