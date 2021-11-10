@@ -265,11 +265,11 @@ def mcmc(
             # update mean and std of energies for print
             avg_eng, std_eng = compute_avg_std(np.asarray(energies))
             print(
-                f"\n\nStep {idx+1}\nAccepted energy {accepted_eng}\nAverage energy {avg_eng}\nStd energy {std_eng}"
+                f"\n\nStep: {idx+1}\nAccepted energy: {accepted_eng}\nAverage energy: {avg_eng}\nStd energy: {std_eng}"
             )
 
+    avg_eng, std_eng = compute_avg_std(np.asarray(energies))
     if save:
-        avg_eng, std_eng = compute_avg_std(np.asarray(energies))
         # use path class
         sample_path = Path(sample_path)
         filename = f"{str(L ** 2)}spins_beta{beta}_neural-mcmc_{num_mc_steps}steps"
@@ -284,10 +284,9 @@ def mcmc(
         np.savez(filename, **out)
 
     print(
-        "Accepted proposals: {0} ({1} %)\n\n".format(
-            accepted, accepted / num_mc_steps * 100
-        )
+        f"Accepted proposals: {accepted} ({accepted / num_mc_steps * 100}%)\nAverage Enery per Spin: {avg_eng}\n\n"
     )
+    return accepted / num_mc_steps * 100
 
 
 if __name__ == "__main__":
