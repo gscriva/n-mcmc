@@ -21,13 +21,13 @@ hydra:
     study_name: null
     n_jobs: 1
     direction: minimize  # 'minimize' or 'maximize' the objective  
-    n_trials: 20 # number of experiments that will be executed
+    n_trials: 200 # number of experiments that will be executed
 
     # choose Optuna hyperparameter sampler
     # learn more here: https://optuna.readthedocs.io/en/stable/reference/samplers.html
     sampler:
       _target_: optuna.samplers.TPESampler
-      seed: 12345
+      seed: ${seed}
       consider_prior: true
       prior_weight: 1.0
       consider_magic_clip: true
@@ -40,18 +40,19 @@ hydra:
     # define range of hyperparameters
     search_space:
       datamodule.batch_size.train:
-        type: categorical
-        choices: [64, 128, 256]
+        type: int
+        low: 32
+        high: 1024
+        step: 32
       model.optim.optimizer.lr:
         type: float
-        low: 0.0001
-        high: 0.2
-      model.optim.use_lr_scheduler:
-        type: categorical
-        choices: [True, False]
+        low: 1e-5
+        high: 1e-2
       model.hidd_neurons:
-        type: categorical
-        choices: [2048, 2560, 3072, 3584]
+        type: int
+        low: 2560
+        high: 4096
+        step: 64
       model.activation:
         type: categorical
-        choices: ["ReLU", "SiLU"]
+        choices: ["ReLU", "SiLU", "LeakyReLU"]

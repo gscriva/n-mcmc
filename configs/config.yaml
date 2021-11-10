@@ -3,13 +3,13 @@
 # specify here default training configuration
 defaults:
   - _self_
-  - trainer: default.yaml
-  - model: pixelcnn.yaml
-  - datamodule: ising_data.yaml
-  - callbacks: default.yaml
+  - trainer: default
+  - model: made
+  - datamodule: ising_data
+  - callbacks: default
   - logger: null # set logger here or use command line (e.g. `python run.py logger=wandb`)
 
-  - mode: default.yaml
+  - mode: default
 
   - experiment: null
   - hparams_search: null
@@ -24,9 +24,6 @@ defaults:
 # learn more here: https://hydra.cc/docs/next/tutorials/basic/running_your_app/working_directory
 work_dir: ${hydra:runtime.cwd}
 
-# path to folder with data
-data_dir: ${work_dir}/data/
-
 # seed for random number generators in pytorch, numpy and python.random
 seed: 42
 
@@ -38,7 +35,7 @@ ignore_warnings: True
 
 # check performance on test set, using the best model achieved during training
 # lightning chooses best model based on metric specified in checkpoint callback
-test_after_training: True
+test_after_training: False
 
 # name of the run, accessed by loggers
 name: null
