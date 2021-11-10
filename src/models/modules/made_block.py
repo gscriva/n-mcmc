@@ -24,7 +24,7 @@ class MadeModel(nn.Module):
 
         self.model = nn.ModuleList()
         activation = getattr(nn, hparams["activation"])
-        activation = activation(nn)
+        activation = activation()
 
         # crate the hidden size list
         hiddens = [hparams["input_size"]] + [
