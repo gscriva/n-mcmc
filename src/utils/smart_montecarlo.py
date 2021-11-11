@@ -284,7 +284,7 @@ def mcmc(
         np.savez(filename, **out)
 
     print(
-        f"Accepted proposals: {accepted} ({accepted / num_mc_steps * 100}%)\nAverage Enery per Spin: {avg_eng}\n\n"
+        f"Accepted proposals: {accepted} ({accepted / num_mc_steps * 100:.2f} %)\nAverage Enery per Spin: {avg_eng:.4}\n\n"
     )
     return accepted / num_mc_steps * 100
 
