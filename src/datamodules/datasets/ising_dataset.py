@@ -22,7 +22,13 @@ class ISINGDataset(Dataset):
         # some models need ravel inputs
         if kwargs["model"] == "src.models.made.Made":
             self.dataset = self.dataset.view(len(self.dataset), -1)
+        else:
+            self.dataset = self.dataset.view(
+                len(self.dataset), 1, kwargs["input_size"], kwargs["input_size"]
+            )
+
         # check if data match with model's input size
+        print(self.dataset.shape[-1])
         assert self.dataset.shape[-1] == kwargs["input_size"]
 
         self.dataset = TensorDataset(self.dataset)
