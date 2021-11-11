@@ -14,7 +14,7 @@ from src.utils.smart_montecarlo import mcmc
 # Parser
 parser = argparse.ArgumentParser()
 parser.add_argument("--ckpt-path", type=Path, help="Path to the checkpoint")
-parser.add_argument("--model", type=str, help="Model to generate")
+parser.add_argument("--model", type=str, choices=["made", "pixel"], help="Model to use")
 parser.add_argument(
     "--num-sample",
     type=int,
@@ -57,20 +57,17 @@ parser.add_argument(
 
 
 def generate(args: argparse.ArgumentParser):
-    # choose the model
-    model = PixelCNN if args.model == "pixelcnn" else Made
+    # choose the model and load all the argumets
+    if args.model == "pixel":
+        model = PixelCNN.load_from_checkpoint(args.ckpt_path)
+        shape = (args.num_sample, 1, model.hparams.input_size, model.hparams.input_size)
+    else:
+        model = Made.load_from_checkpoint(args.ckpt_path)
+        shape = (args.num_sample, model.hparams.input_size)
+    # print configs from trained model
+    print(model.hparams)
 
-    # retrive configs from trained model
-    trained_model = model.load_from_checkpoint(args.ckpt_path)
-    print(trained_model.hparams)
-    dataset = torch.zeros(
-        [
-            args.num_sample,
-            trained_model.hparams.input_size,
-        ],
-        device=trained_model.device,
-    )
-
+    dataset = torch.zeros(shape, device=model.device)
     # make it easy,
     # define only a DataLoader instead of a LightningDataModule
     dataloader = DataLoader(
@@ -81,34 +78,27 @@ def generate(args: argparse.ArgumentParser):
         worker_init_fn=worker_init_fn,
     )
 
+    # check if a gpu is available
     gpus = 1 if torch.cuda.is_available() else 0
+    # instantiate the trainer
     trainer = Trainer(gpus=gpus)
 
     print(f"\nGenerating sample")
-
     pred = trainer.predict(
-        model=trained_model, dataloaders=dataloader, ckpt_path=args.ckpt_path
+        model=model, dataloaders=dataloader, ckpt_path=args.ckpt_path
     )
 
     save_path = "./"
-    size = trained_model.hparams.input_size
+    size = model.hparams.input_size
 
     out = {"sample": pred[0]["sample"], "log_prob": pred[0]["log_prob"]}
-
     # create a unique dataset for mcmc
     for batch in pred[0:]:
         out["sample"] = np.append(out["sample"], batch["sample"], axis=0)
         out["log_prob"] = np.append(out["log_prob"], batch["log_prob"], axis=0)
 
     if args.save_sample:
-        save_name = (
-            "size-"
-            + str(size)
-            + "_sample-"
-            + str(args.num_sample)
-            + "_"
-            + args.ckpt_path.parts[-3]
-        )
+        save_name = f"sample-{args.num_sample}_size-{size}_{args.ckpt_path.parts[-4]}_{args.ckpt_path.parts[-3]}"
         print("\nSaving sample generated as", save_name)
         np.savez(save_path + save_name, **out)
 

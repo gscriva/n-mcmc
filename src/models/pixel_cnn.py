@@ -181,46 +181,12 @@ class PixelCNN(pl.LightningModule):
         log_prob = log_prob.view(log_prob.shape[0], -1).sum(dim=1)
         return log_prob
 
-    def _forward(self, x) -> torch.Tensor:
-        """Method for the forward pass.
-
-        Returns:
-            torch.Tensor: prediction.
-        """
+    def forward(self, x) -> torch.Tensor:
         x_hat = self.net(x)
-
         # Force the first x_hat to be 0.5
         if self.hparams.bias:
             x_hat = x_hat * self.x_hat_mask + self.x_hat_bias
         return x_hat
-
-    def forward(self, num_sample: int) -> Dict[str, np.ndarray]:
-        """Method for generating new sample.
-
-        Args:
-            num_sample (int): Sample of Ising Glasses to generate.
-
-        Returns:
-            Dict[str, torch.Tensor]: New sample and their probabilities.
-        """
-        sample = torch.zeros(
-            [num_sample, 1, self.hparams.input_size, self.hparams.input_size],
-            device=self.device,
-        )
-
-        for i in trange(self.hparams.input_size):
-            for j in trange(self.hparams.input_size, leave=False):
-                x_hat = self._forward(sample).detach()
-                sample[:, :, i, j] = torch.bernoulli(
-                    torch.exp(x_hat[:, 1, i, j]).unsqueeze(1)
-                )
-        sample = sample * 2 - 1
-        # compute probability of the sample
-        log_prob = self.log_prob(sample, x_hat)
-        return {
-            "sample": sample.squeeze(1).detach().numpy(),
-            "log_prob": log_prob.detach().numpy(),
-        }
 
     def step(self, x) -> torch.Tensor:
         """Method for the forward pass (training).
@@ -231,11 +197,6 @@ class PixelCNN(pl.LightningModule):
             torch.Tensor: prediction.
         """
         x_hat = self.net(x)
-
-        # Force the first x_hat to be 0.5
-        if self.hparams.bias:
-            x_hat = x_hat * self.x_hat_mask + self.x_hat_bias
-
         # compute negative log likelihood
         criterion = nn.NLLLoss(reduction="mean")
         # x = (x.squeeze().long() + 1) // 2
@@ -280,6 +241,32 @@ class PixelCNN(pl.LightningModule):
     def test_epoch_end(self, outputs: List[Any]):
         pass
 
+    @torch.no_grad()
+    def predict_step(
+        self, batch, batch_idx: int, dataloader_idx: int = None
+    ) -> Dict[str, np.ndarray]:
+        for i in trange(self.hparams.input_size, leave=False):
+            for j in trange(self.hparams.input_size, leave=False):
+                x_hat = self.forward(batch).detach()
+                batch[:, :, i, j] = torch.bernoulli(
+                    torch.exp(x_hat[:, 1, i, j]).unsqueeze(1)
+                )
+
+        # compute probability of the sample
+        batch = batch * 2 - 1
+        log_prob = self.log_prob(batch, x_hat).detach().cpu().numpy()
+
+        # output should be {-1,+1}, spin convention
+        # and for dwave data must be fortran contiguous
+        batch = batch.detach().cpu().numpy()
+        batch = np.reshape(
+            batch, (-1, self.hparams.input_size, self.hparams.input_size), order="F"
+        )
+        return {
+            "sample": batch,
+            "log_prob": log_prob,
+        }
+
     def configure_optimizers(
         self,
     ) -> Tuple[Sequence[Optimizer], Sequence[Any]]:
@@ -298,19 +285,3 @@ class PixelCNN(pl.LightningModule):
             self.hparams.optim.lr_scheduler, optimizer=opt
         )
         return [opt], [scheduler]
-
-
-# @hydra.main(config_path=str(PROJECT_ROOT / "conf"), config_name="default")
-# def main(cfg: omegaconf.DictConfig):
-#     model: pl.LightningModule = hydra.utils.instantiate(
-#         cfg.model,
-#         physics=cfg.physics,
-#         optim=cfg.optim,
-#         data=cfg.data,
-#         logging=cfg.logging,
-#         _recursive_=False,
-#     )
-
-
-# if __name__ == "__main__":
-#    main()
