@@ -76,7 +76,10 @@ class Made(LightningModule):
     def test_epoch_end(self, outputs: List[Any]):
         pass
 
-    def predict_step(self, batch, batch_idx: int, dataloader_idx: int = None):
+    @torch.no_grad()
+    def predict_step(
+        self, batch, batch_idx: int, dataloader_idx: int = None
+    ) -> Dict[str, np.ndarray]:
         for spin in trange(self.hparams.input_size, leave=False):
             logits = self.forward(batch)
             # generate x_hat according to the compute probability
