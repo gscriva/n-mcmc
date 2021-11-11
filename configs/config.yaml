@@ -38,4 +38,4 @@ ignore_warnings: True
 test_after_training: False
 
 # name of the run, accessed by loggers
-name: null
+name: ${now:%Y-%m-%d_%H:%M:%S}
