@@ -9,7 +9,7 @@ import rich.tree
 from omegaconf import DictConfig, OmegaConf
 from pytorch_lightning.utilities import rank_zero_only
 from torch.nn import BCEWithLogitsLoss
-from torch import Tensor
+from torch import Tensor, set_num_threads
 
 
 def get_logger(name=__name__, level=logging.INFO) -> logging.Logger:
@@ -128,6 +128,12 @@ def empty(*args, **kwargs):
     pass
 
 
+def set_num_cpus() -> None:
+    cpus = os.cpu_count()
+    cpus_to_use = min(cpus // 2, 12)
+    set_num_threads(cpus_to_use)
+
+
 @rank_zero_only
 def log_hyperparameters(
     config: DictConfig,
@@ -172,6 +178,23 @@ def log_hyperparameters(
     trainer.logger.log_hyperparams = empty
 
 
+def compute_prob(logits: Tensor, x: Tensor) -> Tensor:
+    """Compute the probability of a sample using a PyTorch routine.
+
+    Args:
+        logits (Tensor): Logits as computed by the model.
+        x (Tensor): Samples in binary form.
+
+    Returns:
+        float: Log probabilities of the samples.
+    """
+    # BCEWithLogitsLoss with reduction='none' is nothing than
+    # the positive log-likelihood of the sample
+    criterion = BCEWithLogitsLoss(reduction="none")
+    log_prob = -criterion(logits, x)
+    return log_prob.sum(dim=-1)
+
+
 def finish(
     config: DictConfig,
     model: pl.LightningModule,
@@ -188,20 +211,3 @@ def finish(
             import wandb
 
             wandb.finish()
-
-
-def compute_prob(logits: Tensor, x: Tensor) -> Tensor:
-    """Compute the probability of a sample using a PyTorch routine.
-
-    Args:
-        logits (Tensor): Logits as computed by the model.
-        x (Tensor): Samples in binary form.
-
-    Returns:
-        float: Log probabilities of the samples.
-    """
-    # BCEWithLogitsLoss with reduction='none' is nothing than
-    # the positive log-likelihood of the sample
-    criterion = BCEWithLogitsLoss(reduction="none")
-    log_prob = -criterion(logits, x)
-    return log_prob.sum(dim=-1)
