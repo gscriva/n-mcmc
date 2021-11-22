@@ -1,10 +1,9 @@
-from os import name
-from typing import Tuple, Union, List, Dict
-from pathlib import Path
 import argparse
+from os import name
+from pathlib import Path
+from typing import Dict, List, Tuple, Union
 
 import numpy as np
-
 from numba import jit
 from tqdm import trange
 
@@ -234,7 +233,7 @@ def mcmc(
         # get the transition probability
         prob_ratio.append(
             np.exp(
-                accepted_log_prob
+                +accepted_log_prob
                 - trial_log_prob
                 + trial_boltz_log_prob
                 - accepted_boltz_log_prob
@@ -265,7 +264,7 @@ def mcmc(
             # update mean and std of energies for print
             avg_eng, std_eng = compute_avg_std(np.asarray(energies))
             print(
-                f"\n\nStep: {idx+1}\nAccepted energy: {accepted_eng}\nAverage energy: {avg_eng}\nStd energy: {std_eng}"
+                f"\n\nStep: {idx+1}\nTransition prob: {transition_prob[idx]}\nAccepted energy: {accepted_eng}\nAverage energy: {avg_eng}\nStd energy: {std_eng}"
             )
 
     avg_eng, std_eng = compute_avg_std(np.asarray(energies))

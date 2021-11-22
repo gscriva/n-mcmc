@@ -1,8 +1,8 @@
 from typing import Dict, Tuple, Union
 
 import hydra
-import omegaconf
 import numpy as np
+import omegaconf
 import pytorch_lightning as pl
 import torch
 from omegaconf import ValueNode

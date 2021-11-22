@@ -8,8 +8,8 @@ import rich.syntax
 import rich.tree
 from omegaconf import DictConfig, OmegaConf
 from pytorch_lightning.utilities import rank_zero_only
-from torch.nn import BCEWithLogitsLoss
 from torch import Tensor, set_num_threads
+from torch.nn import BCEWithLogitsLoss
 
 
 def get_logger(name=__name__, level=logging.INFO) -> logging.Logger:

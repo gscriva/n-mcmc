@@ -1,21 +1,20 @@
-from typing import Any, Dict, Sequence, Tuple, List
+from typing import Any, Dict, List, Sequence, Tuple
 
 import hydra
-import omegaconf
+import numpy as np
 import pytorch_lightning as pl
 import torch
 from torch import nn
-import numpy as np
 from torch.optim import Optimizer
 from tqdm import trange
 
 from src.models.modules.pixel_blocks import (
+    ConvBlock,
+    FinalBlock,
+    GetActivation,
+    MaskedConv2d,
     PixelBlock,
     ResBlock,
-    FinalBlock,
-    MaskedConv2d,
-    ConvBlock,
-    GetActivation,
 )
 
 # from src.common.utils import PROJECT_ROOT

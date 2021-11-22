@@ -1,9 +1,9 @@
-from typing import Any, List, Tuple, Dict
 from math import sqrt
+from typing import Any, Dict, List, Tuple
 
+import hydra
 import numpy as np
 import torch
-import hydra
 from pytorch_lightning import LightningModule
 from torch import nn
 from torch.functional import Tensor
