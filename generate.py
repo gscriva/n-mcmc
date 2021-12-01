@@ -93,7 +93,7 @@ def generate(args: argparse.ArgumentParser):
 
     out = {"sample": pred[0]["sample"], "log_prob": pred[0]["log_prob"]}
     # create a unique dataset for mcmc
-    for batch in pred[0:]:
+    for batch in pred[1:]:
         out["sample"] = np.append(out["sample"], batch["sample"], axis=0)
         out["log_prob"] = np.append(out["log_prob"], batch["log_prob"], axis=0)
 
