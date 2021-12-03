@@ -3,11 +3,20 @@
 # run in debug mode with:
 # `python run.py mode=debug`
 
-# this flag doesn't really do anything
-debug: true
+defaults:
+  - override /trainer: debug.yaml
 
-# output paths for debug mode
+debug_mode: True
+
 hydra:
+  # sets level of all command line loggers to 'DEBUG'
+  verbose: True
+
+  # https://hydra.cc/docs/tutorials/basic/running_your_app/logging/
+  # use this to set level of only chosen command line loggers to 'DEBUG'
+  # verbose: [src.train, src.utils.utils]
+
+  # sets output paths for all file logs to 'logs/debug/'
   run:
     dir: logs/debug/${now:%Y-%m-%d}/${now:%H-%M-%S}
   sweep:
