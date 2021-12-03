@@ -16,9 +16,7 @@ class ISINGDataset(Dataset):
         self.name = name
 
         # load the dataset and consider input in {0,1}
-        self.dataset = (
-            torch.from_numpy(np.load(self.path)).unsqueeze(1).float() + 1
-        ) // 2
+        self.dataset = (torch.from_numpy(np.load(self.path)).float() + 1) / 2
         # some models need ravel inputs
         if kwargs["model"] == "src.models.made.Made":
             self.dataset = self.dataset.view(len(self.dataset), -1)
@@ -28,7 +26,6 @@ class ISINGDataset(Dataset):
             )
 
         # check if data match with model's input size
-        print(self.dataset.shape[-1])
         assert self.dataset.shape[-1] == kwargs["input_size"]
 
         self.dataset = TensorDataset(self.dataset)

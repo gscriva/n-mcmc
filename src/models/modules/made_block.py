@@ -11,10 +11,11 @@ class MaskedLinear(nn.Linear):
         self.register_buffer("mask", torch.ones(output_size, input_size))
 
     def set_mask(self, mask):
-        self.mask.data = mask.detach().clone()
+        self.mask.data = mask.detach()
 
     def forward(self, input):
-        return F.linear(input, self.mask * self.weight, self.bias)
+        self.weight.data *= self.mask
+        return F.linear(input, self.weight, self.bias)
 
 
 class MadeModel(nn.Module):

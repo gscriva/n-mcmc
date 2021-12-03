@@ -130,7 +130,7 @@ def empty(*args, **kwargs):
 
 def set_num_cpus() -> None:
     cpus = os.cpu_count()
-    cpus_to_use = min(cpus // 2, 12)
+    cpus_to_use = min(cpus - 1, 12)
     set_num_threads(cpus_to_use)
 
 
