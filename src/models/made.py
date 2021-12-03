@@ -21,7 +21,7 @@ class Made(LightningModule):
         # this line ensures params passed to LightningModule will be saved to ckpt
         # it also allows to access params with 'self.hparams' attribute
         self.save_hyperparameters()
-
+        # instantiate the model
         self.model = MadeModel(self.hparams)
         # loss function
         self.criterion = nn.BCEWithLogitsLoss()
@@ -45,7 +45,7 @@ class Made(LightningModule):
         # log train metrics
         self.log("train/loss", loss, on_step=False, on_epoch=True, prog_bar=False)
 
-        return {"loss": loss, "logits": logits.detach(), "targets": x}
+        return loss
 
     def training_epoch_end(self, outputs: List[Any]):
         # `outputs` is a list of dicts returned from `training_step()`
@@ -60,7 +60,7 @@ class Made(LightningModule):
         # log val metrics
         self.log("val/loss", loss, on_step=False, on_epoch=True, prog_bar=True)
 
-        return {"loss": loss, "logits": logits.detach(), "targets": x}
+        return loss
 
     def validation_epoch_end(self, outputs: List[Any]):
         pass
@@ -71,7 +71,7 @@ class Made(LightningModule):
         # log test metrics
         self.log("test/loss", loss, on_step=False, on_epoch=True)
 
-        return {"loss": loss, "logits": logits, "targets": x}
+        return loss
 
     def test_epoch_end(self, outputs: List[Any]):
         pass
