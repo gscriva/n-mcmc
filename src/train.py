@@ -63,9 +63,8 @@ def train(config: DictConfig) -> Optional[float]:
         config.trainer, callbacks=callbacks, logger=logger, _convert_="partial"
     )
 
-    if config.trainer.gpus == 0:
-        log.info("Reducing CPU usage!")
-        utils.set_num_cpus()
+    log.info("Reducing CPU usage!")
+    utils.set_num_cpus()
 
     # Send some parameters from config to all lightning loggers
     log.info("Logging hyperparameters!")
