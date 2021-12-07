@@ -27,10 +27,12 @@ class Made(LightningModule):
         self.criterion = nn.BCEWithLogitsLoss()
 
     def forward(self, x: Tensor) -> Tensor:
-        return self.model(x)
+        logits = self.model(x)
+
+        return compute_prob(logits, x)
 
     def step(self, x: Tensor):
-        logits = self.forward(x)
+        logits = self.model(x)
 
         loss = self.criterion(logits, x)
 
@@ -81,7 +83,7 @@ class Made(LightningModule):
         self, batch, batch_idx: int, dataloader_idx: int = None
     ) -> Dict[str, np.ndarray]:
         for spin in trange(self.hparams.input_size, leave=False):
-            logits = self.forward(batch)
+            logits = self.model(batch)
             # generate x_hat according to the compute probability
             batch[:, spin] = torch.bernoulli(torch.sigmoid(logits[:, spin]))
 
