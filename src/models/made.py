@@ -94,7 +94,7 @@ class Made(LightningModule):
         # output should be {-1,+1}, spin convention
         # and for dwave data must be fortran contiguous
         batch = batch.detach().cpu().numpy()
-        batch = np.reshape(batch, (-1, input_side, input_side), order="F") * 2 - 1
+        batch = np.reshape(batch, (-1, input_side, input_side)) * 2 - 1
         return {
             "sample": batch,
             "log_prob": log_prob,
