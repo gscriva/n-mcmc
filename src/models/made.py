@@ -39,13 +39,13 @@ class Made(LightningModule):
         return loss, logits
 
     def training_step(self, x: Tensor, batch_idx: int):
-        loss, logits = self.step(x)
+        loss, _ = self.step(x)
         # Connectivity agnostic and order agnostic
         if (batch_idx + 1) % self.hparams.resample_every == 0:
             self.model.update_masks(self.hparams)
 
         # log train metrics
-        self.log("train/loss", loss, on_step=False, on_epoch=True, prog_bar=False)
+        self.log("train/loss", loss)
 
         return loss
 
@@ -60,7 +60,7 @@ class Made(LightningModule):
         self.model.update_masks(self.hparams)
 
         # log val metrics
-        self.log("val/loss", loss, on_step=False, on_epoch=True, prog_bar=True)
+        self.log("val/loss", loss, prog_bar=True)
 
         return loss
 
@@ -71,7 +71,7 @@ class Made(LightningModule):
         loss, logits = self.step(x)
 
         # log test metrics
-        self.log("test/loss", loss, on_step=False, on_epoch=True)
+        self.log("test/loss", loss)
 
         return loss
 
