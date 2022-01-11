@@ -39,13 +39,13 @@ class Made(LightningModule):
         return loss, logits
 
     def training_step(self, x: Tensor, batch_idx: int):
-        loss, logits = self.step(x)
+        loss, _ = self.step(x)
         # Connectivity agnostic and order agnostic
         if (batch_idx + 1) % self.hparams.resample_every == 0:
             self.model.update_masks(self.hparams)
 
         # log train metrics
-        self.log("train/loss", loss, on_step=False, on_epoch=True, prog_bar=False)
+        self.log("train/loss", loss)
 
         return loss
 
@@ -60,7 +60,7 @@ class Made(LightningModule):
         self.model.update_masks(self.hparams)
 
         # log val metrics
-        self.log("val/loss", loss, on_step=False, on_epoch=True, prog_bar=True)
+        self.log("val/loss", loss, prog_bar=True)
 
         return loss
 
@@ -71,7 +71,7 @@ class Made(LightningModule):
         loss, logits = self.step(x)
 
         # log test metrics
-        self.log("test/loss", loss, on_step=False, on_epoch=True)
+        self.log("test/loss", loss)
 
         return loss
 
@@ -94,7 +94,7 @@ class Made(LightningModule):
         # output should be {-1,+1}, spin convention
         # and for dwave data must be fortran contiguous
         batch = batch.detach().cpu().numpy()
-        batch = np.reshape(batch, (-1, input_side, input_side), order="F") * 2 - 1
+        batch = np.reshape(batch, (-1, input_side, input_side)) * 2 - 1
         return {
             "sample": batch,
             "log_prob": log_prob,
