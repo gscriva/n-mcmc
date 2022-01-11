@@ -1,0 +1,39 @@
+
+# @package _global_
+
+# to execute this experiment run:
+# python run.py experiment=484spin-3nn
+
+defaults:
+  - override /trainer: default
+  - override /model: made
+  - override /datamodule: ising_data
+  - override /callbacks: default
+  - override /logger: null
+
+# all parameters below will be merged with parameters from default configurations set above
+# this allows you to overwrite only specified parameters
+
+trainer:
+  max_epochs: 100
+
+model:
+  input_size: 484
+  hidd_neurons: 4096
+  activation: "LeakyReLU"
+  optim:
+    optimizer:
+    lr: 0.0005421571993772876
+
+datamodule:
+  num_workers:
+    train: 2
+    val: 1
+    test: 1
+  batch_size:
+    train: 64
+
+callbacks:
+  early_stopping:
+    patience: 5
+
