@@ -1,15 +1,19 @@
 import logging
 import os
 import warnings
-from typing import List, Sequence
+from typing import Any, Dict, List, Sequence, Tuple, Union, Optional
 
+import numpy as np
 import pytorch_lightning as pl
 import rich.syntax
 import rich.tree
+from numba import jit
 from omegaconf import DictConfig, OmegaConf
 from pytorch_lightning.utilities import rank_zero_only
 from torch import Tensor, set_num_threads
 from torch.nn import BCEWithLogitsLoss
+
+from src.utils.adjacency import Adjacency
 
 
 def get_logger(name=__name__, level=logging.INFO) -> logging.Logger:
@@ -211,3 +215,107 @@ def finish(
             import wandb
 
             wandb.finish()
+
+
+@jit(nopython=True)
+def compute_energy(
+    sample: np.ndarray,
+    neighbours: np.ndarray,
+    couplings: np.ndarray,
+    len_neighbours: int,
+) -> float:
+    energy = 0
+    for i in range(neighbours.shape[0]):
+        for j in range(len_neighbours[i]):
+            energy += sample[i] * (sample[neighbours[i, j]] * couplings[i, j])
+    return energy / 2
+
+
+@jit(nopython=True)
+def compute_delta_h(
+    num_spin: int,
+    sample: np.ndarray,
+    neighbours: np.ndarray,
+    couplings: np.ndarray,
+    len_neighbours: int,
+) -> float:
+    delta_h = 0.0
+    for j in range(len_neighbours):
+        delta_h += -sample[num_spin] * (sample[neighbours[j]] * couplings[j])
+    return 2 * delta_h
+
+
+def load_data(
+    sample_path: Union[str, Dict[str, np.ndarray]],
+    model: Optional[str] = None,
+    steps: Optional[int] = None,
+    batch_size: int = 20000,
+    verbose: bool = False,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Load generated sample from path or directly from the file.
+
+    Args:
+        sample_path (Union[str, Dict[str, np.ndarray]]): Path to the generated sample or sample itself.
+
+    Raises:
+        ValueError: Wrong path or corrupted data.
+
+    Returns:
+        Tuple[np.ndarray, np.ndarray]: Sample and their log probability.
+
+    Args:
+        sample_path (Union[str, Dict[str, np.ndarray]]): Path to the generated sample, to the model or to the samples theirself.
+        model (Optional[str], optional): Model to use. Defaults to None.
+        steps (Optional[int], optional): Steps of the Monte Carlo simulation. Defaults to None.
+        batch_size (int, optional): Size of each batch. Defaults to 20000.
+        verbose (bool, optional): Set verbose prints. Defaults to False.
+
+    Raises:
+        ValueError: Wrong path or corrupted data.
+
+    Returns:
+        Tuple[np.ndarray, np.ndarray]: Sample and their log probability.
+    """
+    if isinstance(sample_path, str):
+        if sample_path.split(".")[-1] == "npz":
+            data = np.load(sample_path)
+        elif sample_path.split(".")[-1] == "ckpt":
+            # avoid circular imports
+            from src.generate import generate
+
+            data = generate(
+                sample_path, model, steps, batch_size=batch_size, verbose=verbose
+            )
+    elif isinstance(sample_path, Dict):
+        data = sample_path
+    else:
+        raise ValueError("Neither a path to a model, a npz file or a Numpy dataset!")
+    size = data["sample"].shape[-1]
+    return (
+        data["sample"],
+        data["log_prob"],
+    )
+
+
+def get_couplings(spin_side: int, couplings_path: str) -> Tuple[Any]:
+    adjacency = Adjacency(spin_side)
+    adjacency.loadtxt(couplings_path)
+    # get neighbourhood and couplings matrix
+    neighbours, couplings = adjacency.get_neighbours()
+    len_neighbours = np.sum(couplings != 0, axis=-1)
+    return neighbours.astype(int), couplings, len_neighbours
+
+
+@jit(nopython=True)
+def compute_boltz_prob(eng: float, beta: float, num_spin: int) -> float:
+    """Boltzmann probability distribution
+
+    Args:
+        eng (float): Energy of the sample.
+        beta (float): Inverse temperature
+        num_spin (int): Number of spins in the sample.
+
+    Returns:
+        float: Log-Boltzmann probability.
+    """
+    return -beta * eng

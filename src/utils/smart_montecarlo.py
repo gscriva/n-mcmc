@@ -270,7 +270,7 @@ def mcmc(
     avg_eng, std_eng = compute_avg_std(np.asarray(energies))
     if save:
         # use path class
-        sample_path = Path(sample_path)
+        # sample_path = Path(sample_path)
         filename = f"{str(L ** 2)}spins_beta{beta}_neural-mcmc_{num_mc_steps}steps"
         out = {
             "accepted": accepted,
