@@ -1,7 +1,7 @@
 import logging
 import os
 import warnings
-from typing import Any, Dict, List, Sequence, Tuple, Union, Optional
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import pytorch_lightning as pl

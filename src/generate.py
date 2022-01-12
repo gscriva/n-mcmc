@@ -1,11 +1,11 @@
 import numpy as np
 import torch
-from torch.utils.data import DataLoader
 from pytorch_lightning import Trainer
+from torch.utils.data import DataLoader
 
-from src.models.pixel_cnn import PixelCNN
-from src.models.made import Made
 from src.datamodules.ising_datamodule import worker_init_fn
+from src.models.made import Made
+from src.models.pixel_cnn import PixelCNN
 
 
 def generate(

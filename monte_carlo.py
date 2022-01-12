@@ -1,8 +1,6 @@
 import argparse
 
-from src.utils.adjacency import Adjacency
-from src.utils.montecarlo import single_spin_flip, neural_mcmc, hybrid_mcmc
-
+from src.utils.montecarlo import hybrid_mcmc, neural_mcmc, single_spin_flip
 
 parser = argparse.ArgumentParser()
 
