@@ -16,7 +16,7 @@ def generate(
     num_workers: int = 1,
     save_sample: bool = False,
     verbose: bool = False,
-):
+) -> np.ndarray:
     # choose the model and load all the argumets
     if model == "pixel":
         model = PixelCNN.load_from_checkpoint(ckpt_path)
@@ -45,7 +45,6 @@ def generate(
     print(f"\nGenerating sample")
     pred = trainer.predict(model=model, dataloaders=dataloader, ckpt_path=ckpt_path)
 
-    save_path = "./"
     size = model.hparams.input_size
 
     out = {"sample": pred[0]["sample"], "log_prob": pred[0]["log_prob"]}
@@ -57,6 +56,6 @@ def generate(
     if save_sample:
         save_name = f"sample-{num_sample}_size-{size}_{ckpt_path.parts[-4]}_{ckpt_path.parts[-3]}"
         print("\nSaving sample generated as", save_name)
-        np.savez(save_path + save_name, **out)
+        np.savez(save_name, **out)
 
     return out

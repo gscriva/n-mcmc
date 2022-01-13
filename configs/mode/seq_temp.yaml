@@ -1,0 +1,20 @@
+# @package _global_
+
+callbacks:
+  model_checkpoint:
+    filename: "best-beta${name}"
+
+datamodule:
+  datasets:
+    train:
+      path: /home/beppe/neural-mcmc/data/datasets/seq_temp/${datamodule.datasets.train.name}/train.npy
+    val:
+      name: ${datamodule.datasets.train.name}
+      path: /home/beppe/neural-mcmc/data/datasets/seq_temp/${datamodule.datasets.val.name}/val.npy
+
+hydra:
+  run:
+    dir: logs/seq_temp/${datamodule.datasets.train.name}/
+  sweep:
+    dir: logs/seq_temp/multiruns/${datamodule.datasets.train.name}/
+    subdir: ${hydra.job.num}
