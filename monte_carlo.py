@@ -13,6 +13,9 @@ parser.add_argument("--couplings-path", type=str, help="Path to the couplings")
 parser.add_argument(
     "--verbose", dest="verbose", action="store_true", help="Set verbose prints"
 )
+parser.add_argument(
+    "--save", dest="save", action="store_true", help="Save the samples after MCMC"
+)
 
 parser_single = subparsers.add_parser(
     "single", help="Single Spin Flip Monte Carlo Simulation"
@@ -41,9 +44,6 @@ parser_neural.add_argument(
 parser_neural.add_argument(
     "--batch-size", type=int, default=20000, help="Size of each batch (default: 20000)"
 )
-parser_neural.add_argument(
-    "--save", dest="save", action="store_true", help="Save the sample after MCMC"
-)
 
 parser_hybrid.add_argument("--type", type=str, default="hybrid", help=argparse.SUPPRESS)
 parser_hybrid.add_argument(
@@ -67,9 +67,6 @@ parser_hybrid.add_argument(
     default=0.5,
     help="Probability of single spin flip step (default: 0.5)",
 )
-parser_hybrid.add_argument(
-    "--save", dest="save", action="store_true", help="Save the sample after MCMC"
-)
 
 
 def main(args: argparse.ArgumentParser):
@@ -83,6 +80,7 @@ def main(args: argparse.ArgumentParser):
             args.sweeps,
             args.seed_startpoint,
             args.verbose,
+            args.save,
         )
     elif args.type == "neural":
         neural_mcmc(
