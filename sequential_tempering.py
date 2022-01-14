@@ -32,10 +32,13 @@ def main(args):
         args.couplings_path,
         sweeps=100,
     )
-
+    # save the first dataset
+    np.save(
+        f"data/seq_temp/{args.couplings_path.split('/')[-1][:-4]}/single-beta{args.beta_min}"
+    )
     train_data, val_data = train_test_split(dataset, test_size=0.15)
     # create directory and save data
-    parent_path = f"data/datasets/seq_temp/{args.couplings_path.split('/')[-1][:-4]}/"
+    parent_path = f"data/seq_temp/{args.couplings_path.split('/')[-1][:-4]}/"
     Path(parent_path).mkdir(parents=True, exist_ok=True)
     train_data_path = parent_path + "train"
     val_data_path = parent_path + "val"
@@ -58,7 +61,7 @@ def main(args):
         # save the last montecarlo output
         if beta == betas[-2]:
             np.save(
-                f"data/datasets/seq_temp/{args.couplings_path.split('/')[-1][:-4]}/dataset-beta{betas[i+1]}",
+                f"data/seq_temp/{args.couplings_path.split('/')[-1][:-4]}/dataset-beta{betas[i+1]}",
                 dataset,
             )
             break

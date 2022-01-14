@@ -7,10 +7,10 @@ callbacks:
 datamodule:
   datasets:
     train:
-      path: ${work_dir}/data/datasets/seq_temp/${datamodule.datasets.train.name}/train.npy
+      path: ${work_dir}/data/seq_temp/${datamodule.datasets.train.name}/train.npy
     val:
       name: ${datamodule.datasets.train.name}
-      path: ${work_dir}/data/datasets/seq_temp/${datamodule.datasets.val.name}/val.npy
+      path: ${work_dir}/data/seq_temp/${datamodule.datasets.val.name}/val.npy
 
 hydra:
   run:
