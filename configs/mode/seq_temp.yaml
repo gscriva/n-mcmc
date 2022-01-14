@@ -18,3 +18,6 @@ hydra:
   sweep:
     dir: logs/seq_temp/multiruns/${datamodule.datasets.train.name}/
     subdir: ${hydra.job.num}
+
+trainer:
+  max_epochs: 30
