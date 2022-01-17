@@ -1,8 +1,10 @@
 import logging
+import math
 import os
 import warnings
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pytorch_lightning as pl
 import rich.syntax
@@ -280,7 +282,7 @@ def load_data(
         if sample_path.split(".")[-1] == "npz":
             data = np.load(sample_path)
         elif sample_path.split(".")[-1] == "ckpt":
-            # avoid circular imports
+            # import here to avoid circular imports
             from src.generate import generate
 
             data = generate(
@@ -290,7 +292,6 @@ def load_data(
         data = sample_path
     else:
         raise ValueError("Neither a path to a model, a npz file or a Numpy dataset!")
-    size = data["sample"].shape[-1]
     return (
         data["sample"],
         data["log_prob"],
@@ -319,3 +320,122 @@ def compute_boltz_prob(eng: float, beta: float, num_spin: int) -> float:
         float: Log-Boltzmann probability.
     """
     return -beta * eng
+
+
+def plot_hist(
+    paths: List[str],
+    couplings_path: str,
+    truth_path: str = "/home/scriva/pixel-cnn/data/100-v1/train_100_lattice_2d_ising_spins.npy",
+    colors: Optional[List[str]] = None,
+    labels: Optional[List[str]] = None,
+    save: bool = False,
+) -> None:
+    if labels is None:
+        labels = [f"Dataset {i}" for i, _ in enumerate(paths)]
+        labels.append("Truth")
+    if colors is None:
+        colors = [None for _ in paths]
+
+    assert len(labels) - 1 == len(colors) == len(paths)
+
+    truth = np.load(truth_path)
+    try:
+        truth = truth["sample"]
+    except:
+        truth = truth
+
+    max_len_sample = truth.shape[0]
+    truth = np.reshape(truth, (max_len_sample, -1))
+    spins = truth.shape[-1]
+
+    # laod couplings
+    # TODO Adjancecy should wotk with spins, not spin side
+    neighbours, couplings, len_neighbours = get_couplings(
+        int(math.sqrt(spins)), couplings_path
+    )
+
+    eng_truth = []
+    for t in truth:
+        eng_truth.append(compute_energy(t, neighbours, couplings, len_neighbours))
+    eng_truth = np.asarray(eng_truth) / spins
+
+    min_eng, max_eng = eng_truth.min(), eng_truth.max()
+
+    engs = []
+    for path in paths:
+        data = np.load(path)
+        try:
+            sample = data["sample"]
+        except:
+            sample = data
+
+        sample = sample.squeeze()
+        max_len_sample = min(max_len_sample, sample.shape[0])
+        sample = np.reshape(sample, (-1, spins))
+
+        eng = []
+        for s in sample:
+            eng.append(compute_energy(s, neighbours, couplings, len_neighbours))
+        eng = np.asarray(eng) / spins
+
+        min_eng = min(min_eng, eng.min())
+        max_eng = max(max_eng, eng.max())
+        engs.append(eng)
+
+    fig, ax = plt.subplots(figsize=(10, 10), facecolor="white")
+
+    plt.rcParams["mathtext.fontset"] = "stix"
+    plt.rcParams["font.family"] = "STIXGeneral"
+    plt.rcParams["axes.linewidth"] = 1.5
+
+    stringfont = "serif"
+
+    ax.tick_params(axis="y", labelsize=18)
+    ax.tick_params(axis="x", labelsize=18)
+    ax.tick_params(which="both", top=True, right=True, direction="in")
+
+    bins = np.linspace(min_eng, max_eng).tolist()
+
+    for i, eng in enumerate(engs):
+        _ = plt.hist(
+            eng,
+            bins=bins,
+            log=True,
+            label=f"{labels[i]}",
+            histtype="bar",
+            alpha=0.9 - i * 0.1,
+            color=colors[i],
+        )
+        print(
+            f"\n{labels[i]}\nmean: {eng.mean()}\nmin: {eng.min()} ({np.sum(eng==eng.min())} occurance(s))                                                                    (s))"
+        )
+    _ = plt.hist(
+        eng_truth,
+        bins=bins,
+        log=True,
+        label=f"{labels[i+1]}",
+        histtype="bar",
+        edgecolor="k",
+        color=["lightgrey"],
+        alpha=0.6,
+    )
+
+    print(
+        f"\n{labels[i+1]} eng\nmean: {eng_truth.mean()}\nmin: {eng_truth.min()}  ({np.sum(eng_truth==eng_truth.min())} occurance(s))"
+    )
+
+    plt.ylabel("Count", fontsize=26, fontfamily=stringfont)
+    plt.xlabel(r"$\mathrm{\frac{E}{N}}$", fontsize=26, fontfamily=stringfont)
+
+    plt.ylim(1, max_len_sample * 0.5)
+    plt.legend(loc="best", labelspacing=0.4, fontsize=18, borderpad=0.2)
+
+    if save:
+        plt.savefig(
+            "hist.png",
+            edgecolor="white",
+            facecolor=fig.get_facecolor(),
+            bbox_inches="tight",
+        )
+
+    return engs, eng_truth
