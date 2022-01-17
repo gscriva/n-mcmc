@@ -227,7 +227,7 @@ def hybrid_mcmc(
     prob_single: float = 0.5,
     verbose: bool = False,
     save: bool = False,
-):
+) -> np.ndarray:
     # set a limit to prevent memory/timeout errors
     MAX_STEPS = 1e7
 
@@ -431,4 +431,4 @@ def hybrid_mcmc(
     print(
         f"Accepted total proposals: {accepted} ({accepted / steps * 100:.2f} %)\nAverage Enery per Spin: {avg_eng / spin_side**2 :.4}\n\n"
     )
-    return accepted / steps * 100
+    return np.asarray(samples)

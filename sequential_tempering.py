@@ -66,7 +66,7 @@ def main(args):
         ckpt_path = f"logs/seq_temp/{args.couplings_path.split('/')[-1][:-4]}/checkpoints/{date_time}/best-beta{beta}.ckpt"
         # smart or hybrid montecarlo at the next beta
         if args.hybrid:
-            hybrid_mcmc(
+            dataset = hybrid_mcmc(
                 betas[i + 1],
                 args.dataset_size,
                 ckpt_path,
