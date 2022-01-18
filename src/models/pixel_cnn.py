@@ -259,7 +259,7 @@ class PixelCNN(pl.LightningModule):
         # and for dwave data must be fortran contiguous
         batch = batch.detach().cpu().numpy()
         batch = np.reshape(
-            batch, (-1, self.hparams.input_size, self.hparams.input_size), order="F"
+            batch, (-1, self.hparams.input_size, self.hparams.input_size)
         )
         return {
             "sample": batch,
