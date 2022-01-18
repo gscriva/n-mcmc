@@ -23,7 +23,7 @@ model:
   activation: "LeakyReLU"
   optim:
     optimizer:
-    lr: 0.0005421571993772876
+      lr: 0.0005421571993772876
 
 datamodule:
   num_workers:
