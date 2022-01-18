@@ -326,6 +326,7 @@ def plot_hist(
     paths: List[str],
     couplings_path: str,
     truth_path: str = "/home/scriva/pixel-cnn/data/100-v1/train_100_lattice_2d_ising_spins.npy",
+    ground_state: Optional[float] = None,
     colors: Optional[List[str]] = None,
     labels: Optional[List[str]] = None,
     save: bool = False,
@@ -419,6 +420,16 @@ def plot_hist(
         color=["lightgrey"],
         alpha=0.6,
     )
+    if ground_state is not None:
+        plt.vlines(
+            ground_state,
+            1,
+            max_len_sample * 0.5,
+            colors="red",
+            linestyles="dashed",
+            alpha=0.7,
+            label="Ground State",
+        )
 
     print(
         f"\n{labels[i+1]} eng\nmean: {eng_truth.mean()}\nmin: {eng_truth.min()}  ({np.sum(eng_truth==eng_truth.min())} occurance(s))"
