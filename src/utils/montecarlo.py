@@ -401,7 +401,7 @@ def hybrid_mcmc(
         if verbose:
             # update mean and std of energies for print
             print(
-                f"{step+1:6d}   {accepted_eng/spins:2.4f}  {np.asarray(energies).mean()/spins:2.4f}  {np.asarray(energies).std(ddof=1)/spins**2:.4f}  {transition_prob[steps]:2.4f}"
+                f"{step+1:6d}  {accepted_eng/spins:2.4f}  {np.asarray(energies).mean()/spins:2.4f}  {np.asarray(energies).std(ddof=1)/spins**2:.4f}  {transition_prob[step]:2.4f}"
             )
 
         if step > MAX_STEPS:
