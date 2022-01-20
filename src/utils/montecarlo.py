@@ -399,11 +399,15 @@ def hybrid_mcmc(
         energies.append(accepted_eng)
 
         if verbose:
-            # update mean and std of energies for print
-            print(
-                f"{step+1:6d}   {accepted_eng/spins:2.4f}  {np.asarray(energies).mean()/spins:2.4f}  {np.asarray(energies).std(ddof=1)/spins**2:.4f}  {transition_prob[steps]:2.4f}"
-            )
-
+            if neural:
+                print(
+                    f"{step+1:6d}  neural  {accepted_eng/spins:2.4f}  {trial_eng/spins:2.4f}  {accepted_log_prob:3.2f}  {trial_log_prob:3.2f}  {accepted_boltz_log_prob:4.2f}  {trial_boltz_log_prob:4.2f}  {transition_prob[step]:2.4f}"
+                )
+            else:
+                # update mean and std of energies for print
+                print(
+                    f"{step+1:6d}  single  {accepted_eng/spins:2.4f}  {trial_eng/spins:2.4f}  {accepted_log_prob:3.2f}  {trial_log_prob:3.2f}  {accepted_boltz_log_prob:4.2f}  {trial_boltz_log_prob:4.2f}  {transition_prob[step]:2.4f}"
+                )
         if step > MAX_STEPS:
             print(f"Steps limit")
             break
