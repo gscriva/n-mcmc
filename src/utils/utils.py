@@ -330,7 +330,7 @@ def plot_hist(
     colors: Optional[List[str]] = None,
     labels: Optional[List[str]] = None,
     save: bool = False,
-) -> None:
+) -> Tuple[List[np.ndarray], List[np.ndarray]]:
     if labels is None:
         labels = [f"Dataset {i}" for i, _ in enumerate(paths)]
         labels.append("Truth")
@@ -450,3 +450,88 @@ def plot_hist(
         )
 
     return engs, eng_truth
+
+
+def block_std(engs: List[np.ndarray], len_block: int, skip: int = 0) -> float:
+    """Compute the block std of a list of arrays.
+    See http://chimera.roma1.infn.it/SP/doc/estratti/dataAnalysis.pdf
+
+    Args:
+        engs (List[np.ndarray]): List of energies arrays.
+        len_block (int): Block lenght to compute std.
+        skip (int, optional): Number of initial sample to skip. Defaults to 0.
+
+    Returns:
+        float: Block std.
+    """
+    std_engs = []
+    for eng in engs:
+        eng = eng[skip:].copy()
+        rest_len = eng.size % len_block
+        if rest_len != 0:
+            eng = eng[:-rest_len]
+        eng = eng.reshape(-1, len_block)
+        new_len = eng.shape[0]
+        error = np.std(eng.mean(axis=1), ddof=0) / np.sqrt(new_len - 1)
+        std_engs.append(error)
+    return std_engs
+
+
+def block_mean(engs: List[np.ndarray], len_block: int, skip: int = 0) -> float:
+    """Compute the block mean of a list of arrays.
+    See http://chimera.roma1.infn.it/SP/doc/estratti/dataAnalysis.pdf
+
+    Args:
+        engs (List[np.ndarray]): List of the energy arrays.
+        len_block (int): Block lenght to compute mean.
+        skip (int, optional): Number of initial sample to skip. Defaults to 0.
+
+    Returns:
+        float: Block mean.
+    """
+    mean_engs = []
+    for eng in engs:
+        eng = eng[skip:].copy()
+        rest_len = eng.size % len_block
+        if rest_len != 0:
+            eng = eng[:-rest_len]
+        eng = eng.reshape(len_block, -1)
+        mean_engs.append(np.mean(eng.mean(axis=0)))
+    return mean_engs
+
+
+def get_energy(
+    square_spin: int, paths: List[str], couplings_path: str
+) -> List[np.array]:
+    """Returns the energy of a list of dataset, according to a given coupling.
+
+    Args:
+        square_spin (int): Square root of spins (assuming square lattice).
+        paths (List[str]): List of paths of .npy or .npz files.
+        couplings_path (str): Path to .txt coupling file.
+
+    Returns:
+        List[np.array]: List of the sample configuration.
+    """
+    neighbours, couplings, len_neighbours = get_couplings(square_spin, couplings_path)
+
+    engs = []
+    for path in paths:
+        out = np.load(path)
+
+        try:
+            sample = out["sample"]
+        except:
+            print(f"No sample subdir found in {path} \nLoading from path...")
+            sample = out
+
+        sample = sample.squeeze()
+        sample = np.reshape(sample, (-1, square_spin ** 2))
+
+        eng = []
+        for s in sample:
+            eng.append(compute_energy(s, neighbours, couplings, len_neighbours))
+        eng = np.asarray(eng) / square_spin ** 2
+
+        engs.append(eng)
+    return engs
