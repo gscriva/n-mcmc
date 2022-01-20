@@ -137,9 +137,9 @@ def neural_mcmc(
     # compute boltzmann probability
     accepted_boltz_log_prob = compute_boltz_prob(accepted_eng, beta, spin_side ** 2)
 
-    print(f"\nPerforming MCMC at beta={beta}")
+    print(f"\nPerforming Neural MCMC at beta={beta}")
 
-    pbar = tqdm(range(steps - 1), leave=False, disable=verbose)
+    pbar = tqdm(range(steps - 1), disable=verbose)
     for idx in pbar:
         # get next sample and its energy
         trial_sample, trial_log_prob = proposals[idx + 1], log_probs[idx + 1]
@@ -227,9 +227,9 @@ def hybrid_mcmc(
     prob_single: float = 0.5,
     verbose: bool = False,
     save: bool = False,
-):
+) -> np.ndarray:
     # set a limit to prevent memory/timeout errors
-    MAX_STEPS = 1e6
+    MAX_STEPS = 1e7
 
     # load data generate by the NN
     # when sample on-the-fly sample 10% more than expected
@@ -261,9 +261,9 @@ def hybrid_mcmc(
     samples = []
     transition_prob = []
     log_prob_ratio = []
-    accepted = 0
+    accepted = 1
     accepted_single = 0
-    accepted_neural = 0
+    accepted_neural = 1
 
     # compute the energy of the new configuration
     accepted_eng = compute_energy(
@@ -272,7 +272,7 @@ def hybrid_mcmc(
     # compute boltzmann probability
     accepted_boltz_log_prob = compute_boltz_prob(accepted_eng, beta, spins)
 
-    print(f"\nPerforming MCMC at beta={beta}")
+    print(f"\nPerforming Hybrid MCMC at beta={beta}")
 
     steps_neural = 1
     steps_single = 0
@@ -435,4 +435,4 @@ def hybrid_mcmc(
     print(
         f"Accepted total proposals: {accepted} ({accepted / steps * 100:.2f} %)\nAverage Enery per Spin: {avg_eng / spin_side**2 :.4}\n\n"
     )
-    return accepted / steps * 100
+    return np.asarray(samples)
