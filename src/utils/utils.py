@@ -329,6 +329,7 @@ def plot_hist(
     ground_state: Optional[float] = None,
     colors: Optional[List[str]] = None,
     labels: Optional[List[str]] = None,
+    density: Optional[bool] = False,
     save: bool = False,
 ) -> Tuple[List[np.ndarray], List[np.ndarray]]:
     if labels is None:
@@ -406,6 +407,7 @@ def plot_hist(
             histtype="bar",
             alpha=0.9 - i * 0.1,
             color=colors[i],
+            density=density,
         )
         print(
             f"\n{labels[i]}\nmean: {eng.mean()}\nmin: {eng.min()} ({np.sum(eng==eng.min())} occurance(s))                                                                    (s))"
@@ -419,7 +421,12 @@ def plot_hist(
         edgecolor="k",
         color=["lightgrey"],
         alpha=0.6,
+        density=density,
     )
+
+    if density:
+        max_len_sample = 200
+
     if ground_state is not None:
         plt.vlines(
             ground_state,
