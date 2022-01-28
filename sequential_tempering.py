@@ -74,7 +74,7 @@ def main(args):
                 args.model,
             )
         else:
-            dataset = neural_mcmc(
+            dataset, _ = neural_mcmc(
                 betas[i + 1],
                 args.dataset_size,
                 ckpt_path,
