@@ -208,7 +208,7 @@ def neural_mcmc(
     print(
         f"\nAccepted proposals: {accepted} on {steps} ({accepted / steps * 100:.2f} %)\nAverage Enery per Spin: {avg_eng / spin_side**2:.4}\n\n"
     )
-    return np.asarray(samples), accepted / steps * 100
+    return np.asarray(samples), np.asarray(energies), accepted / steps * 100
 
 
 """Hybrid MCMC performs a simulations where it choses with probability
