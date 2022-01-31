@@ -54,24 +54,20 @@ def main(args):
             * 2.0
             - 1.0
         )
-        print("daataset small and add_dataset", dataset.shape, add_dataset.shape)
         dataset = np.append(
             dataset,
             add_dataset,
             axis=0,
         )
         add_dataset = add_dataset[: math.floor(add_dataset.shape[0] / args.beta_num), :]
-        print(
-            "dataset full and add_dataset",
-            dataset.shape,
-            add_dataset.shape,
-        )
 
     # create directory and save mcmc data
-    parent_path = f"data/seq_temp/{args.couplings_path.split('/')[-1][:-4]}/"
+    parent_path = (
+        f"data/seq_temp/{args.couplings_path.split('/')[-1][:-4]}/{date_time}/"
+    )
     Path(parent_path).mkdir(parents=True, exist_ok=True)
     np.save(
-        f"data/seq_temp/{args.couplings_path.split('/')[-1][:-4]}/single-beta{args.beta_min}",
+        parent_path + f"single-beta{args.beta_min}",
         dataset,
     )
     # save training and validation dataset
@@ -100,9 +96,7 @@ def main(args):
                 size=math.floor(args.dataset_size * 0.3 / args.beta_num),
                 replace=False,
             )
-            print("rand_idx", rand_idx.shape)
             add_dataset = np.append(add_dataset, dataset[rand_idx, :], axis=0)
-            print("dataset old and add_dataset new", dataset.shape, add_dataset.shape)
 
         # smart or hybrid montecarlo at the next beta
         if args.hybrid:
@@ -124,19 +118,17 @@ def main(args):
         # save the last montecarlo output
         if beta == betas[-2]:
             np.save(
-                f"data/seq_temp/{args.couplings_path.split('/')[-1][:-4]}/dataset-beta{betas[i+1]}",
+                parent_path + f"dataset-beta{betas[i+1]}",
                 dataset,
             )
             break
 
-        print("dataset before add_dataset", dataset.shape, add_dataset.shape)
         if args.random:
             dataset = np.append(
                 dataset[: args.dataset_size - add_dataset.shape[0], :],
                 add_dataset,
                 axis=0,
             )
-        print("dataset plus add_dataset", dataset.shape, add_dataset.shape)
         # save using the same name convention to repeat the training
         train_data, val_data = train_test_split(dataset, test_size=0.15)
         np.save(train_data_path, train_data)
