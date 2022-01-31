@@ -1,4 +1,5 @@
 import argparse
+import math
 import os
 from datetime import datetime
 from pathlib import Path
@@ -24,6 +25,12 @@ parser.add_argument("--model", type=str, choices=["made", "pixel"], help="Model 
 parser.add_argument(
     "--hybrid", dest="hybrid", action="store_true", help="Use Hybrid MCMC"
 )
+parser.add_argument(
+    "--random",
+    dest="random",
+    action="store_true",
+    help="Use anintila random sampling for MCMC",
+)
 
 
 def main(args):
@@ -34,10 +41,32 @@ def main(args):
     dataset = single_spin_flip(
         args.spins,
         args.beta_min,
-        args.dataset_size,
+        math.floor(args.dataset_size * 0.7) if args.random else args.dataset_size,
         args.couplings_path,
         sweeps=1000,
     )
+
+    if args.random:
+        add_dataset = (
+            np.random.randint(
+                0, 2, size=(math.ceil(args.dataset_size * 0.3), args.spins)
+            )
+            * 2.0
+            - 1.0
+        )
+        print("daataset small and add_dataset", dataset.shape, add_dataset.shape)
+        dataset = np.append(
+            dataset,
+            add_dataset,
+            axis=0,
+        )
+        add_dataset = add_dataset[: math.floor(add_dataset.shape[0] / args.beta_num), :]
+        print(
+            "dataset full and add_dataset",
+            dataset.shape,
+            add_dataset.shape,
+        )
+
     # create directory and save mcmc data
     parent_path = f"data/seq_temp/{args.couplings_path.split('/')[-1][:-4]}/"
     Path(parent_path).mkdir(parents=True, exist_ok=True)
@@ -58,23 +87,34 @@ def main(args):
     ckpt_path = "null"
     betas = np.linspace(args.beta_min, args.beta_max, num=args.beta_num, endpoint=True)
     for i, beta in enumerate(betas):
-        # train the neaural network for the first time
+        # train the neaural network
         os.system(
             f"python run.py name={beta} datamodule.datasets.train.name={args.couplings_path.split('/')[-1][:-4]} callbacks.model_checkpoint.dirpath=checkpoints/{date_time} mode=seq_temp"
         )
         # generate using the trained network
         ckpt_path = f"logs/seq_temp/{args.couplings_path.split('/')[-1][:-4]}/checkpoints/{date_time}/best-beta{beta}.ckpt"
+        # store some sample from the previous dataset
+        if args.random:
+            rand_idx = np.random.choice(
+                args.dataset_size,
+                size=math.floor(args.dataset_size * 0.3 / args.beta_num),
+                replace=False,
+            )
+            print("rand_idx", rand_idx.shape)
+            add_dataset = np.append(add_dataset, dataset[rand_idx, :], axis=0)
+            print("dataset old and add_dataset new", dataset.shape, add_dataset.shape)
+
         # smart or hybrid montecarlo at the next beta
         if args.hybrid:
             dataset = hybrid_mcmc(
                 betas[i + 1],
-                args.dataset_size,
+                args.dataset_size + 1,
                 ckpt_path,
                 args.couplings_path,
                 args.model,
             )
         else:
-            dataset = neural_mcmc(
+            dataset, _, _ = neural_mcmc(
                 betas[i + 1],
                 args.dataset_size,
                 ckpt_path,
@@ -88,6 +128,15 @@ def main(args):
                 dataset,
             )
             break
+
+        print("dataset before add_dataset", dataset.shape, add_dataset.shape)
+        if args.random:
+            dataset = np.append(
+                dataset[: args.dataset_size - add_dataset.shape[0], :],
+                add_dataset,
+                axis=0,
+            )
+        print("dataset plus add_dataset", dataset.shape, add_dataset.shape)
         # save using the same name convention to repeat the training
         train_data, val_data = train_test_split(dataset, test_size=0.15)
         np.save(train_data_path, train_data)
