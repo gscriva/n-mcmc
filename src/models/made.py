@@ -93,7 +93,7 @@ class Made(LightningModule):
         input_side = int(sqrt(self.hparams.input_size))
         # output should be {-1,+1}, spin convention
         # and for dwave data must be fortran contiguous
-        batch = batch.detach().cpu().numpy()
+        batch = batch.detach().cpu().numpy().astype("int8")
         batch = np.reshape(batch, (-1, input_side, input_side)) * 2 - 1
         return {
             "sample": batch,
