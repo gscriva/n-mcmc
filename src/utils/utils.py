@@ -405,7 +405,7 @@ def plot_hist(
             log=True,
             label=f"{labels[i]}",
             histtype="bar",
-            alpha=0.9 - i * 0.1,
+            alpha=0.9 - i * 0.05,
             color=colors[i],
             density=density,
         )
