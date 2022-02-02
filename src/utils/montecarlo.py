@@ -23,9 +23,10 @@ def single_spin_flip(
     sweeps: int = 8,
     seed: int = 12345,
     verbose: bool = False,
+    disable_bar: bool = False,
     save: bool = False,
 ) -> np.ndarray:
-    print("Start MCMC simulation")
+    print(f"\nStart MCMC simulation    seed={seed}")
 
     # get neighbourhood matrix
     spin_side = int(math.sqrt(spins))
@@ -42,7 +43,9 @@ def single_spin_flip(
     single_step = 0
     eng_now = compute_energy(sample, neighbours, couplings, len_neighbours)
 
-    pbar = tqdm(range(steps), disable=verbose)
+    # disable bar in parallel processing too
+    disable = disable_bar + verbose
+    pbar = tqdm(range(steps), disable=disable)
     for step in pbar:
         for _ in range(sweeps):
             single_step += 1

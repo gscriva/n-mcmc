@@ -1,4 +1,6 @@
 import argparse
+from typing import List
+from multiprocessing import Process
 
 from src.utils.montecarlo import hybrid_mcmc, neural_mcmc, single_spin_flip
 
@@ -29,9 +31,10 @@ parser_single.add_argument(
 )
 parser_single.add_argument(
     "--seed-startpoint",
+    nargs="+",
     type=int,
     default=12345,
-    help="Seed to sample the starting point configuration",
+    help="Seed to sample the starting point configuration, may be a list",
 )
 
 parser_neural.add_argument("--type", type=str, default="neural", help=argparse.SUPPRESS)
@@ -72,16 +75,30 @@ parser_hybrid.add_argument(
 def main(args: argparse.ArgumentParser):
     print(args)
     if args.type == "single":
-        single_spin_flip(
-            args.spins,
-            args.beta,
-            args.steps,
-            args.couplings_path,
-            args.sweeps,
-            args.seed_startpoint,
-            args.verbose,
-            args.save,
-        )
+        procs = []
+        disable_bar = False
+        if len(args.seed_startpoint) > 1:
+            disable_bar = True
+        for seed in args.seed_startpoint:
+            proc = Process(
+                target=single_spin_flip,
+                args=(
+                    args.spins,
+                    args.beta,
+                    args.steps,
+                    args.couplings_path,
+                    args.sweeps,
+                    seed,
+                    args.verbose,
+                    disable_bar,
+                    args.save,
+                ),
+            )
+            procs.append(proc)
+            proc.start()
+        for proc in procs:
+            proc.join()
+
     elif args.type == "neural":
         neural_mcmc(
             args.beta,
