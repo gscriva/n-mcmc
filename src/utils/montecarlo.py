@@ -26,7 +26,7 @@ def single_spin_flip(
     disable_bar: bool = False,
     save: bool = False,
 ) -> np.ndarray:
-    print(f"\nStart MCMC simulation    seed={seed}")
+    print(f"\nStart MCMC simulation\nbeta={beta} seed={seed}")
 
     # get neighbourhood matrix
     spin_side = int(math.sqrt(spins))
@@ -73,14 +73,15 @@ def single_spin_flip(
                 f"{step:6d}  {eng_now / spins:2.4f}  {np.asarray(energies).mean():2.4f}  {np.asarray(energies).std(ddof=1):2.4f}"
             )
 
-    configs = np.asarray(configs)
+    configs = np.asarray(configs).astype("int8")
     energies = np.asarray(energies)
     if save:
         # Saves the configurations
         np.save(f"{spins}spins-seed{seed}-sample{step+1}-beta{beta}", configs)
 
+    print(f"\nbeta={beta} seed={seed}")
     print(
-        f"\nMCMC: Step: {step + 1:6d} Accepted {accepted / single_step * 100:2.2f} %  Energy per spin (avg): {energies.mean() / spins:2.4f} Energy per spin (std): {(energies / spins).std(ddof=1):2.4f}  Energy per spin (min): {energies.min() / spins:}"
+        f"MCMC: Step: {step + 1:6d} Accepted {accepted / single_step * 100:2.2f} %  Energy per spin (avg): {energies.mean() / spins:2.4f} Energy per spin (std): {(energies / spins).std(ddof=1):2.4f}  Energy per spin (min): {energies.min() / spins:}"
     )
     return configs
 
@@ -202,7 +203,7 @@ def neural_mcmc(
             "accepted": accepted,
             "avg_eng": avg_eng,
             "std_eng": std_eng,
-            "sample": samples,
+            "sample": np.asarray(samples).astype("int8"),
             "energy": energies,
         }
         print("\nSaving MCMC output as {0}".format(filename))
@@ -423,7 +424,7 @@ def hybrid_mcmc(
             "avg_eng": avg_eng,
             "std_eng": std_eng,
             "trans_prob": transition_prob,
-            "sample": samples,
+            "sample": np.asarray(samples).astype("int8"),
             "energy": energies,
         }
         print("\nSaving MCMC output as {0}".format(filename))
@@ -438,4 +439,4 @@ def hybrid_mcmc(
     print(
         f"Accepted total proposals: {accepted} ({accepted / steps * 100:.2f} %)\nAverage Enery per Spin: {avg_eng / spin_side**2 :.4}\n\n"
     )
-    return np.asarray(samples)
+    return np.asarray(samples).astype("int8")

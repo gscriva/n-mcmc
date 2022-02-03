@@ -1,6 +1,7 @@
 import argparse
+import multiprocessing
 from typing import List
-from multiprocessing import Process
+from multiprocessing import Process, Pool
 
 from src.utils.montecarlo import hybrid_mcmc, neural_mcmc, single_spin_flip
 
@@ -10,7 +11,9 @@ subparsers = parser.add_subparsers(help="Choose the Monte Carlo method")
 
 parser.add_argument("--spins", type=int, help="Number of spins of the ravel spin glass")
 parser.add_argument("--steps", type=int, help="Steps of the Monte Carlo simulation")
-parser.add_argument("--beta", type=float, help="Inverse temperature")
+parser.add_argument(
+    "--beta", nargs="+", type=float, help="Inverse temperature, may be a list"
+)
 parser.add_argument("--couplings-path", type=str, help="Path to the couplings")
 parser.add_argument(
     "--verbose", dest="verbose", action="store_true", help="Set verbose prints"
@@ -71,33 +74,35 @@ parser_hybrid.add_argument(
     help="Probability of single spin flip step (default: 0.5)",
 )
 
+MAX_CPUS = 20
+
 
 def main(args: argparse.ArgumentParser):
     print(args)
     if args.type == "single":
         procs = []
         disable_bar = False
-        if len(args.seed_startpoint) > 1:
+        if len(args.seed_startpoint) > 1 or len(args.beta) > 1:
             disable_bar = True
+        pool = Pool(MAX_CPUS)
         for seed in args.seed_startpoint:
-            proc = Process(
-                target=single_spin_flip,
-                args=(
-                    args.spins,
-                    args.beta,
-                    args.steps,
-                    args.couplings_path,
-                    args.sweeps,
-                    seed,
-                    args.verbose,
-                    disable_bar,
-                    args.save,
-                ),
-            )
-            procs.append(proc)
-            proc.start()
-        for proc in procs:
-            proc.join()
+            for beta in args.beta:
+                pool.apply_async(
+                    single_spin_flip,
+                    args=(
+                        args.spins,
+                        beta,
+                        args.steps,
+                        args.couplings_path,
+                        args.sweeps,
+                        seed,
+                        args.verbose,
+                        disable_bar,
+                        args.save,
+                    ),
+                )
+        pool.close()
+        pool.join()
 
     elif args.type == "neural":
         neural_mcmc(
