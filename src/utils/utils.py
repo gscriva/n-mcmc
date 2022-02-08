@@ -420,7 +420,7 @@ def plot_hist(
         histtype="bar",
         edgecolor="k",
         color=["lightgrey"],
-        alpha=0.4,
+        alpha=0.5,
         density=density,
     )
 
@@ -431,7 +431,7 @@ def plot_hist(
         plt.vlines(
             ground_state,
             1,
-            max_len_sample * 0.99,
+            max_len_sample * 0.5,
             colors="red",
             linestyles="dashed",
             alpha=0.7,
@@ -445,8 +445,8 @@ def plot_hist(
     plt.ylabel("Count", fontsize=26, fontfamily=stringfont)
     plt.xlabel(r"$\mathrm{\frac{E}{N}}$", fontsize=26, fontfamily=stringfont)
 
-    plt.ylim(1, max_len_sample * 0.99)
-    plt.legend(loc="upper right", labelspacing=0.4, fontsize=18, borderpad=0.2)
+    plt.ylim(1, max_len_sample * 0.5)
+    plt.legend(loc="best", labelspacing=0.4, fontsize=18, borderpad=0.2)
 
     if save:
         plt.savefig(
