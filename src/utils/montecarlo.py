@@ -236,6 +236,7 @@ def hybrid_mcmc(
     model_path: Optional[str] = None,
     batch_size: int = 20000,
     prob_single: float = 0.5,
+    save_every: int = 1,
     verbose: bool = False,
     save: bool = False,
     disable_bar: bool = False,
@@ -339,7 +340,7 @@ def hybrid_mcmc(
             # compute prob via the trained model
             # model accepts as input x in {0,1}
             trial_log_prob = (
-                model.forward((torch.from_numpy((trial_sample + 1) / 2))
+                model.forward(torch.from_numpy((trial_sample + 1) / 2).float())
                 .detach()
                 .numpy()
             )
@@ -424,7 +425,7 @@ def hybrid_mcmc(
                     f"{step+1:6d}  single  {accepted_eng/spins:2.4f}  {trial_eng/spins:2.4f}  {accepted_log_prob:3.2f}  {trial_log_prob:3.2f}  {accepted_boltz_log_prob:4.2f}  {trial_boltz_log_prob:4.2f}  {transition_prob[step]:2.4f}"
                 )
         if step > MAX_STEPS:
-            print(f"Steps limit")
+            print("Steps limit")
             break
 
     avg_eng, std_eng = np.asarray(energies).mean(), np.asarray(energies).std(ddof=1)
@@ -435,8 +436,8 @@ def hybrid_mcmc(
             "avg_eng": avg_eng,
             "std_eng": std_eng,
             "trans_prob": transition_prob,
-            "sample": np.asarray(samples).astype("int8"),
-            "energy": energies,
+            "sample": np.asarray(samples).astype("int8")[::save_every, :],
+            "energy": energies[::save_every],
         }
         print("\nSaving MCMC output as {0}".format(filename))
         np.savez(filename, **out)
@@ -451,7 +452,7 @@ def hybrid_mcmc(
         f"Accepted total proposals: {accepted} ({accepted / steps * 100:.2f} %)\nAverage Enery per Spin: {avg_eng / spin_side**2 :.4}\n\n"
     )
     return (
-        np.asarray(samples).astype("int8"),
-        np.asarray(energies),
+        np.asarray(samples).astype("int8")[::save_every, :],
+        np.asarray(energies)[::save_every],
         accepted / steps * 100,
     )

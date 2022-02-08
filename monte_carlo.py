@@ -1,7 +1,5 @@
 import argparse
-import multiprocessing
-from typing import List
-from multiprocessing import Process, Pool
+from multiprocessing import Pool
 
 from src.utils.montecarlo import hybrid_mcmc, neural_mcmc, single_spin_flip
 
@@ -21,6 +19,7 @@ parser.add_argument(
 parser.add_argument(
     "--save", dest="save", action="store_true", help="Save the samples after MCMC"
 )
+parser.add_argument("--save-every", type=int, help="Number of steps to save", default=1)
 
 parser_single = subparsers.add_parser(
     "single", help="Single Spin Flip Monte Carlo Simulation"
@@ -130,6 +129,7 @@ def main(args: argparse.ArgumentParser):
                 args.model_path,
                 args.batch_size,
                 args.prob_single,
+                args.save_every,
                 args.verbose,
                 args.save,
                 disable_bar,
