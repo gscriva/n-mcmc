@@ -372,7 +372,7 @@ def plot_hist(
             sample = data
 
         sample = sample.squeeze()
-        max_len_sample = min(max_len_sample, sample.shape[0])
+        max_len_sample = max(max_len_sample, sample.shape[0])
         sample = np.reshape(sample, (-1, spins))
 
         eng = []
@@ -405,7 +405,7 @@ def plot_hist(
             log=True,
             label=f"{labels[i]}",
             histtype="bar",
-            alpha=0.9 - i * 0.05,
+            alpha=0.9 - i * 0.1,
             color=colors[i],
             density=density,
         )
@@ -420,7 +420,7 @@ def plot_hist(
         histtype="bar",
         edgecolor="k",
         color=["lightgrey"],
-        alpha=0.6,
+        alpha=0.4,
         density=density,
     )
 
@@ -431,7 +431,7 @@ def plot_hist(
         plt.vlines(
             ground_state,
             1,
-            max_len_sample * 0.5,
+            max_len_sample * 0.99,
             colors="red",
             linestyles="dashed",
             alpha=0.7,
@@ -445,8 +445,8 @@ def plot_hist(
     plt.ylabel("Count", fontsize=26, fontfamily=stringfont)
     plt.xlabel(r"$\mathrm{\frac{E}{N}}$", fontsize=26, fontfamily=stringfont)
 
-    plt.ylim(1, max_len_sample * 0.5)
-    plt.legend(loc="best", labelspacing=0.4, fontsize=18, borderpad=0.2)
+    plt.ylim(1, max_len_sample * 0.99)
+    plt.legend(loc="upper right", labelspacing=0.4, fontsize=18, borderpad=0.2)
 
     if save:
         plt.savefig(
