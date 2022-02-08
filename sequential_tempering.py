@@ -36,7 +36,7 @@ parser.add_argument(
 def main(args):
     # set unique dir name
     now = datetime.now()
-    date_time = now.strftime("%d-%m-%Y_%H-%M-%S")
+    date_time = now.strftime("%Y-%m-%d_%H-%M-%S")
 
     dataset = single_spin_flip(
         args.spins,
@@ -82,13 +82,14 @@ def main(args):
 
     ckpt_path = "null"
     betas = np.linspace(args.beta_min, args.beta_max, num=args.beta_num, endpoint=True)
+    print(f"Beta: {betas}")
     for i, beta in enumerate(betas):
         # train the neaural network
         os.system(
-            f"python run.py name={beta} datamodule.datasets.train.name={args.couplings_path.split('/')[-1][:-4]} callbacks.model_checkpoint.dirpath=checkpoints/{date_time} mode=seq_temp"
+            f"python run.py name={beta} datamodule.datasets.train.name={args.couplings_path.split('/')[-1][:-4]}/{date_time} callbacks.model_checkpoint.dirpath=checkpoints mode=seq_temp"
         )
         # generate using the trained network
-        ckpt_path = f"logs/seq_temp/{args.couplings_path.split('/')[-1][:-4]}/checkpoints/{date_time}/best-beta{beta}.ckpt"
+        ckpt_path = f"logs/seq_temp/{args.couplings_path.split('/')[-1][:-4]}/{date_time}/checkpoints/best-beta{beta}.ckpt"
         # store some sample from the previous dataset
         if args.random:
             rand_idx = np.random.choice(
@@ -100,7 +101,7 @@ def main(args):
 
         # smart or hybrid montecarlo at the next beta
         if args.hybrid:
-            dataset = hybrid_mcmc(
+            dataset, _, _ = hybrid_mcmc(
                 betas[i + 1],
                 args.dataset_size + 1,
                 ckpt_path,

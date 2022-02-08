@@ -215,7 +215,11 @@ def neural_mcmc(
     print(
         f"Accepted proposals: {accepted} on {steps} ({accepted / steps * 100:.2f} %)\nAverage Enery per Spin: {avg_eng / spin_side**2:.4}"
     )
-    return np.asarray(samples), np.asarray(energies), accepted / steps * 100
+    return (
+        np.asarray(samples).astype("int8"),
+        np.asarray(energies),
+        accepted / steps * 100,
+    )
 
 
 """Hybrid MCMC performs a simulations where it choses with probability
@@ -234,6 +238,7 @@ def hybrid_mcmc(
     prob_single: float = 0.5,
     verbose: bool = False,
     save: bool = False,
+    disable_bar: bool = False,
 ) -> np.ndarray:
     # set a limit to prevent memory/timeout errors
     MAX_STEPS = 1e7
@@ -283,7 +288,8 @@ def hybrid_mcmc(
 
     steps_neural = 1
     steps_single = 0
-    pbar = tqdm(range(steps), disable=verbose)
+    disable = verbose + disable_bar
+    pbar = tqdm(range(steps), disable=disable)
     for step in pbar:
         # take the sample from the neural network with desired prob
         if np.random.uniform() <= (1 - prob_single):
@@ -333,7 +339,9 @@ def hybrid_mcmc(
             # compute prob via the trained model
             # model accepts as input x in {0,1}
             trial_log_prob = (
-                model.forward(torch.from_numpy((trial_sample + 1) / 2)).detach().numpy()
+                model.forward((torch.from_numpy((trial_sample + 1) / 2))
+                .detach()
+                .numpy()
             )
             if not np.isfinite(trial_log_prob):
                 print("NAN in trial_log_prob")
@@ -442,4 +450,8 @@ def hybrid_mcmc(
     print(
         f"Accepted total proposals: {accepted} ({accepted / steps * 100:.2f} %)\nAverage Enery per Spin: {avg_eng / spin_side**2 :.4}\n\n"
     )
-    return np.asarray(samples).astype("int8")
+    return (
+        np.asarray(samples).astype("int8"),
+        np.asarray(energies),
+        accepted / steps * 100,
+    )

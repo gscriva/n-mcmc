@@ -79,10 +79,11 @@ MAX_CPUS = 20
 
 def main(args: argparse.ArgumentParser):
     print(args)
+    disable_bar = False
+    if len(args.beta) > 1:
+        disable_bar = True
     if args.type == "single":
-        procs = []
-        disable_bar = False
-        if len(args.seed_startpoint) > 1 or len(args.beta) > 1:
+        if len(args.seed_startpoint) > 1:
             disable_bar = True
         pool = Pool(MAX_CPUS)
         for seed in args.seed_startpoint:
@@ -105,29 +106,34 @@ def main(args: argparse.ArgumentParser):
         pool.join()
 
     elif args.type == "neural":
-        neural_mcmc(
-            args.beta,
-            args.steps,
-            args.path,
-            args.couplings_path,
-            args.model,
-            args.batch_size,
-            args.verbose,
-            args.save,
-        )
+        for beta in args.beta:
+            neural_mcmc(
+                beta,
+                args.steps,
+                args.path,
+                args.couplings_path,
+                args.model,
+                args.batch_size,
+                args.verbose,
+                args.save,
+                disable_bar,
+            )
+
     elif args.type == "hybrid":
-        hybrid_mcmc(
-            args.beta,
-            args.steps,
-            args.path,
-            args.couplings_path,
-            args.model,
-            args.model_path,
-            args.batch_size,
-            args.prob_single,
-            args.verbose,
-            args.save,
-        )
+        for beta in args.beta:
+            hybrid_mcmc(
+                beta,
+                args.steps,
+                args.path,
+                args.couplings_path,
+                args.model,
+                args.model_path,
+                args.batch_size,
+                args.prob_single,
+                args.verbose,
+                args.save,
+                disable_bar,
+            )
 
 
 if __name__ == "__main__":
