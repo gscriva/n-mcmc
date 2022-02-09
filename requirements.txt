@@ -34,3 +34,4 @@ seaborn         # used in some callbacks
 jupyterlab      # better jupyter notebooks
 pudb            # debugger
 numba           # fast computing
+statsmodels     # compute autocorrelation function
