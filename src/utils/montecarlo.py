@@ -402,9 +402,10 @@ def hybrid_mcmc(
             accepted_log_prob = np.copy(trial_log_prob)
             accepted_sample = np.copy(trial_sample)
             accepted_boltz_log_prob = np.copy(trial_boltz_log_prob)
-            type_accepted = "neural" if neural else "single"
-            if type_accepted == "neural" and not neural:
+            # count mix steps
+            if type_accepted == "single" and neural:
                 neural_after_single += 1
+            type_accepted = "neural" if neural else "single"
 
             if neural:
                 accepted_neural += 1

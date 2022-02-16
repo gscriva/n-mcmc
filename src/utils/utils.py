@@ -384,7 +384,7 @@ def plot_hist(
         max_eng = max(max_eng, eng.max())
         engs.append(eng)
 
-    fig, ax = plt.subplots(figsize=(10, 10), facecolor="white")
+    fig, ax = plt.subplots(figsize=(12, 12), facecolor="white")
 
     plt.rcParams["mathtext.fontset"] = "stix"
     plt.rcParams["font.family"] = "STIXGeneral"
@@ -446,7 +446,7 @@ def plot_hist(
     plt.xlabel(r"$\mathrm{\frac{E}{N}}$", fontsize=26, fontfamily=stringfont)
 
     plt.ylim(1, max_len_sample * 0.5)
-    plt.legend(loc="best", labelspacing=0.4, fontsize=18, borderpad=0.2)
+    plt.legend(loc="upper right", labelspacing=0.4, fontsize=18, borderpad=0.2)
 
     if save:
         plt.savefig(
