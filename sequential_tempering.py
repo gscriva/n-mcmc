@@ -44,6 +44,7 @@ def main(args):
         math.floor(args.dataset_size * 0.7) if args.random else args.dataset_size,
         args.couplings_path,
         sweeps=1000,
+        disable_bar=True,
     )
 
     if args.random:
@@ -107,6 +108,7 @@ def main(args):
                 ckpt_path,
                 args.couplings_path,
                 args.model,
+                disable_bar=True,
             )
         else:
             dataset, _, _ = neural_mcmc(
@@ -115,6 +117,7 @@ def main(args):
                 ckpt_path,
                 args.couplings_path,
                 args.model,
+                disable_bar=True,
             )
         # save the last montecarlo output
         if beta == betas[-2]:

@@ -196,7 +196,7 @@ def neural_mcmc(
 
         if verbose:
             print(
-                f"{idx+1:6d}  {accepted_eng / spins:2.4f}  {np.asarray(energies).mean() / spins:2.4f}  {np.asarray(energies).std(ddof=1) / spins**2:2.4f} {transition_prob[idx]:3.4f}"
+                f"{idx+1:6d}  neural  {accepted_eng/spins:2.4f}  {trial_eng/spins:2.4f}  {accepted_log_prob:3.2f}  {trial_log_prob:3.2f}  {accepted_boltz_log_prob:4.2f}  {trial_boltz_log_prob:4.2f}  {transition_prob[idx]:2.4f}"
             )
 
     avg_eng, std_eng = np.asarray(energies).mean(), np.asarray(energies).std(ddof=1)
@@ -277,6 +277,8 @@ def hybrid_mcmc(
     accepted = 1
     accepted_single = 0
     accepted_neural = 1
+    type_accepted = "neural"
+    neural_after_single = 0
 
     # compute the energy of the new configuration
     accepted_eng = compute_energy(
@@ -400,6 +402,9 @@ def hybrid_mcmc(
             accepted_log_prob = np.copy(trial_log_prob)
             accepted_sample = np.copy(trial_sample)
             accepted_boltz_log_prob = np.copy(trial_boltz_log_prob)
+            type_accepted = "neural" if neural else "single"
+            if type_accepted == "neural" and not neural:
+                neural_after_single += 1
 
             if neural:
                 accepted_neural += 1
@@ -449,8 +454,9 @@ def hybrid_mcmc(
         f"Accepted proposals (single spin flip): {accepted_single} on {steps_single} ({accepted_single / (steps_single + np.finfo(float).eps) * 100:.2f} %)"
     )
     print(
-        f"Accepted total proposals: {accepted} ({accepted / steps * 100:.2f} %)\nAverage Enery per Spin: {avg_eng / spin_side**2 :.4}\n\n"
+        f"Accepted total proposals: {accepted} ({accepted / steps * 100:.2f} %)\nAverage Enery per Spin: {avg_eng / spin_side**2 :.4}"
     )
+    print(f"Accepted Neural after Single {neural_after_single}\n\n")
     return (
         np.asarray(samples).astype("int8")[::save_every, :],
         np.asarray(energies)[::save_every],
