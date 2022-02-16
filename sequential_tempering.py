@@ -31,6 +31,12 @@ parser.add_argument(
     action="store_true",
     help="Use anintila random sampling for MCMC",
 )
+parser.add_argument(
+    "--save_every",
+    type=int,
+    default=1,
+    help="Save every n steps to get uncorrelated data (default: 1)",
+)
 
 
 def main(args):
@@ -104,7 +110,7 @@ def main(args):
         if args.hybrid:
             dataset, _, _ = hybrid_mcmc(
                 betas[i + 1],
-                args.dataset_size + 1,
+                args.dataset_size * args.save_every + 1,
                 ckpt_path,
                 args.couplings_path,
                 args.model,
@@ -113,12 +119,18 @@ def main(args):
         else:
             dataset, _, _ = neural_mcmc(
                 betas[i + 1],
-                args.dataset_size,
+                args.dataset_size * args.save_every,
                 ckpt_path,
                 args.couplings_path,
                 args.model,
                 disable_bar=True,
             )
+        # reduce correlations
+        dataset = dataset[:: args.save_every]
+        np.save(
+            parent_path + f"dataset-beta{betas[i+1]}",
+            dataset,
+        )
         # save the last montecarlo output
         if beta == betas[-2]:
             np.save(

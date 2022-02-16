@@ -247,7 +247,7 @@ def hybrid_mcmc(
     # load data generate by the NN
     # when sample on-the-fly sample 10% more than expected
     proposals, log_probs = load_data(
-        path, model, math.ceil(steps * (1.1 - prob_single)), batch_size, verbose
+        path, model, math.ceil(steps * (1.2 - prob_single)), batch_size, verbose
     )
 
     # load the model
