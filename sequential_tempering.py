@@ -26,13 +26,19 @@ parser.add_argument(
     "--hybrid", dest="hybrid", action="store_true", help="Use Hybrid MCMC"
 )
 parser.add_argument(
-    "--random",
-    dest="random",
+    "--keep-mem",
+    dest="keep_memory",
     action="store_true",
-    help="Use anintila random sampling for MCMC",
+    help="Use an initial random sampling for MCMC",
 )
 parser.add_argument(
-    "--save_every",
+    "--prob-single",
+    type=float,
+    default=0.5,
+    help="Probability of single spin flip step (default: 0.5)",
+)
+parser.add_argument(
+    "--save-every",
     type=int,
     default=1,
     help="Save every n steps to get uncorrelated data (default: 1)",
@@ -47,13 +53,13 @@ def main(args):
     dataset = single_spin_flip(
         args.spins,
         args.beta_min,
-        math.floor(args.dataset_size * 0.7) if args.random else args.dataset_size,
+        math.floor(args.dataset_size * 0.7) if args.keep_memory else args.dataset_size,
         args.couplings_path,
         sweeps=1000,
         disable_bar=True,
     )
 
-    if args.random:
+    if args.keep_memory:
         add_dataset = (
             np.random.randint(
                 0, 2, size=(math.ceil(args.dataset_size * 0.3), args.spins)
@@ -98,7 +104,7 @@ def main(args):
         # generate using the trained network
         ckpt_path = f"logs/seq_temp/{args.couplings_path.split('/')[-1][:-4]}/{date_time}/checkpoints/best-beta{beta}.ckpt"
         # store some sample from the previous dataset
-        if args.random:
+        if args.keep_memory:
             rand_idx = np.random.choice(
                 args.dataset_size,
                 size=math.floor(args.dataset_size * 0.3 / args.beta_num),
@@ -108,28 +114,33 @@ def main(args):
 
         # smart or hybrid montecarlo at the next beta
         if args.hybrid:
-            dataset, _, _ = hybrid_mcmc(
+            dataset, engs, _ = hybrid_mcmc(
                 betas[i + 1],
-                args.dataset_size * args.save_every + 1,
+                args.dataset_size + 1,
                 ckpt_path,
                 args.couplings_path,
                 args.model,
+                prob_single=args.prob_single,
+                save_every=args.save_every,
                 disable_bar=True,
             )
         else:
-            dataset, _, _ = neural_mcmc(
+            dataset, engs, _ = neural_mcmc(
                 betas[i + 1],
-                args.dataset_size * args.save_every,
+                args.dataset_size,
                 ckpt_path,
                 args.couplings_path,
                 args.model,
+                save_every=args.save_every,
                 disable_bar=True,
             )
         # reduce correlations
         dataset = dataset[:: args.save_every]
+        engs = engs[:: args.save_every]
+        # save energies at each step
         np.save(
-            parent_path + f"dataset-beta{betas[i+1]}",
-            dataset,
+            parent_path + f"engs-beta{betas[i+1]}",
+            engs,
         )
         # save the last montecarlo output
         if beta == betas[-2]:
@@ -139,7 +150,7 @@ def main(args):
             )
             break
 
-        if args.random:
+        if args.keep_memory:
             dataset = np.append(
                 dataset[: args.dataset_size - add_dataset.shape[0], :],
                 add_dataset,

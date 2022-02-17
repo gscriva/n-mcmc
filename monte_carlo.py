@@ -72,6 +72,12 @@ parser_hybrid.add_argument(
     default=0.5,
     help="Probability of single spin flip step (default: 0.5)",
 )
+parser_hybrid.add_argument(
+    "--save-every",
+    type=int,
+    default=1,
+    help="Save every n steps to get uncorrelated data (default: 1)",
+)
 
 MAX_CPUS = 20
 
@@ -115,6 +121,7 @@ def main(args: argparse.ArgumentParser):
                 args.batch_size,
                 args.verbose,
                 args.save,
+                args.save_every,
                 disable_bar,
             )
 
@@ -129,9 +136,9 @@ def main(args: argparse.ArgumentParser):
                 args.model_path,
                 args.batch_size,
                 args.prob_single,
-                args.save_every,
                 args.verbose,
                 args.save,
+                args.save_every,
                 disable_bar,
             )
 
