@@ -82,7 +82,7 @@ class Made(LightningModule):
     def predict_step(
         self, batch, batch_idx: int, dataloader_idx: int = None
     ) -> Dict[str, np.ndarray]:
-        for spin in trange(self.hparams.input_size, leave=False):
+        for spin in range(self.hparams.input_size):
             logits = self.model(batch)
             # generate x_hat according to the compute probability
             batch[:, spin] = torch.bernoulli(torch.sigmoid(logits[:, spin]))
