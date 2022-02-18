@@ -55,7 +55,7 @@ def main(args):
         args.beta_min,
         math.floor(args.dataset_size * 0.7) if args.keep_memory else args.dataset_size,
         args.couplings_path,
-        sweeps=1000,
+        sweeps=1,
         disable_bar=True,
     )
 
@@ -134,9 +134,6 @@ def main(args):
                 save_every=args.save_every,
                 disable_bar=True,
             )
-        # reduce correlations
-        dataset = dataset[:: args.save_every]
-        engs = engs[:: args.save_every]
         # save energies at each step
         np.save(
             parent_path + f"engs-beta{betas[i+1]}",
