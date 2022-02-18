@@ -46,8 +46,9 @@ def single_spin_flip(
     # disable bar in parallel processing too
     disable = disable_bar + verbose
     pbar = tqdm(range(steps), disable=disable)
+    skip_steps = sweeps * spins
     for step in pbar:
-        for _ in range(sweeps):
+        for _ in range(skip_steps):
             single_step += 1
             k = np.random.randint(0, spins)
             # Metropolis-Hastings algorithm https://doi.org/10.2307/2334940

@@ -55,7 +55,7 @@ def main(args):
         args.beta_min,
         math.floor(args.dataset_size * 0.7) if args.keep_memory else args.dataset_size,
         args.couplings_path,
-        sweeps=1,
+        sweeps=2,
         disable_bar=True,
     )
 
