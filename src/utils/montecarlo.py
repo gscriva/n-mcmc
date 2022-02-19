@@ -206,7 +206,7 @@ def neural_mcmc(
     avg_eng, std_eng = np.asarray(energies).mean(), np.asarray(energies).std(ddof=1)
     # reduce save data
     samples = np.asarray(samples).astype("int8")[::save_every, ...]
-    energies = np.asarrray(energies).astype(np.double)[::save_every]
+    energies = np.asarray(energies).astype(np.double)[::save_every]
     if save:
         filename = f"{str(spins)}spins_beta{beta}_neural-mcmc_{steps}steps"
         out = {

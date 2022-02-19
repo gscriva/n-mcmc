@@ -114,7 +114,7 @@ def main(args: argparse.ArgumentParser):
         for beta in args.beta:
             neural_mcmc(
                 beta,
-                args.steps,
+                args.steps - 1,
                 args.path,
                 args.couplings_path,
                 args.model,
