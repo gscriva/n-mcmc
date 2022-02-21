@@ -1,8 +1,9 @@
-from typing import Dict, Union, Optional, Tuple
+import math
+from datetime import datetime
+from typing import Dict, Optional, Tuple, Union
 
 import numpy as np
 import torch
-import math
 from tqdm import tqdm
 
 from src.models.made import Made
@@ -10,8 +11,8 @@ from src.utils.utils import (
     compute_boltz_prob,
     compute_delta_h,
     compute_energy,
-    load_data,
     get_couplings,
+    load_data,
 )
 
 
@@ -20,13 +21,14 @@ def single_spin_flip(
     beta: float,
     steps: int,
     couplings_path: str,
-    sweeps: int = 8,
-    seed: int = 12345,
+    sweeps: int = 0,
+    seed: int = 42,
     verbose: bool = False,
     disable_bar: bool = False,
     save: bool = False,
 ) -> Tuple[np.ndarray, np.ndarray]:
     print(f"\nStart MCMC simulation\nbeta={beta} seed={seed}")
+    start_time = datetime.now()
 
     # get neighbourhood matrix
     spin_side = int(math.sqrt(spins))
@@ -46,7 +48,8 @@ def single_spin_flip(
     # disable bar in parallel processing too
     disable = disable_bar + verbose
     pbar = tqdm(range(steps), disable=disable)
-    skip_steps = sweeps * spins
+    # use sweeps to reduce correlation
+    skip_steps = 1 if sweeps == 0 else sweeps * spins
     for step in pbar:
         for _ in range(skip_steps):
             single_step += 1
@@ -84,6 +87,7 @@ def single_spin_flip(
     print(
         f"MCMC: Step: {step + 1:6d} Accepted {accepted / single_step * 100:2.2f} %  Energy per spin (avg): {energies.mean() / spins:2.4f} Energy per spin (std): {(energies / spins).std(ddof=1):2.4f}  Energy per spin (min): {energies.min() / spins:}"
     )
+    print(f"Duration {datetime.now() - start_time}")
     return configs, energies
 
 
@@ -113,6 +117,7 @@ def neural_mcmc(
         save_every (int): Save every n steps to get uncorrelated data. Defaults to 1.
         disable_bar(bool, optional): Set True to disable the progress bar. Defaults to False.
     """
+    start_time = datetime.now()
     # load more data than needed
     steps = (steps + 1) * save_every
     # load data generate by the NN
@@ -222,6 +227,7 @@ def neural_mcmc(
     print(
         f"Accepted proposals: {accepted} on {steps} ({accepted / steps * 100:.2f} %)\nAverage Enery per Spin: {avg_eng / spin_side**2:.4}"
     )
+    print(f"Duration {datetime.now() - start_time}")
     return (samples, energies, accepted / steps * 100)
 
 
@@ -244,6 +250,7 @@ def hybrid_mcmc(
     save_every: int = 1,
     disable_bar: bool = False,
 ) -> Tuple[np.ndarray, np.ndarray, float]:
+    start_time = datetime.now()
     # set a limit to prevent memory/timeout errors
     MAX_STEPS = 1e7
     # increase steps to avoid correlation
@@ -463,5 +470,6 @@ def hybrid_mcmc(
     print(
         f"Accepted total proposals: {accepted} ({accepted / steps * 100:.2f} %)\nAverage Enery per Spin: {avg_eng / spin_side**2 :.4}"
     )
-    print(f"Accepted Neural after Single {neural_after_single}\n\n")
+    print(f"Accepted Neural after Single {neural_after_single}")
+    print(f"Duration {datetime.now() - start_time}\n")
     return (samples, energies, accepted / steps * 100)

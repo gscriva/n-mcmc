@@ -29,14 +29,14 @@ parser_hybrid = subparsers.add_parser("hybrid", help="Hybrid MCMC")
 
 parser_single.add_argument("--type", type=str, default="single", help=argparse.SUPPRESS)
 parser_single.add_argument(
-    "--sweeps", type=int, default=1, help="Number of sweeps before save"
+    "--sweeps", type=int, default=0, help="Number of sweeps before save (default: 0)"
 )
 parser_single.add_argument(
     "--seed-startpoint",
     nargs="+",
     type=int,
-    default=12345,
-    help="Seed to sample the starting point configuration, may be a list",
+    default=42,
+    help="Seed to sample the starting point configuration, may be a list (default: 42)",
 )
 
 parser_neural.add_argument("--type", type=str, default="neural", help=argparse.SUPPRESS)
@@ -61,7 +61,7 @@ parser_hybrid.add_argument(
     "--model-path",
     type=str,
     default=None,
-    help="Path to the model, if not given in path arg (default: None)",
+    help="Path to the model, if not given in path's argument (default: None)",
 )
 parser_hybrid.add_argument(
     "--batch-size", type=int, default=20000, help="Size of each batch (default: 20000)"
