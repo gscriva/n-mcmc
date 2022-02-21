@@ -384,7 +384,7 @@ def plot_hist(
         max_eng = max(max_eng, eng.max())
         engs.append(eng)
 
-    fig, ax = plt.subplots(figsize=(12, 12), facecolor="white")
+    fig, ax = plt.subplots(figsize=(10, 10), facecolor="white")
 
     plt.rcParams["mathtext.fontset"] = "stix"
     plt.rcParams["font.family"] = "STIXGeneral"
@@ -392,9 +392,14 @@ def plot_hist(
 
     stringfont = "serif"
 
-    ax.tick_params(axis="y", labelsize=18)
-    ax.tick_params(axis="x", labelsize=18)
-    ax.tick_params(which="both", top=True, right=True, direction="in")
+    ax.tick_params(axis="y", labelsize=20)
+    ax.tick_params(axis="x", labelsize=20)
+    plt.tick_params(
+        top=True, right=True, labeltop=False, labelright=False, direction="in"
+    )
+    plt.tick_params(
+        top=True, right=True, labeltop=False, labelright=False, direction="in"
+    )
 
     bins = np.linspace(min_eng, max_eng).tolist()
 
