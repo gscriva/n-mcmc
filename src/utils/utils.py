@@ -384,22 +384,55 @@ def plot_hist(
         max_eng = max(max_eng, eng.max())
         engs.append(eng)
 
-    fig, ax = plt.subplots(figsize=(10, 10), facecolor="white")
+    fig, ax = plt.subplots(figsize=(7.8, 7.8), dpi=128, facecolor="white")
 
     plt.rcParams["mathtext.fontset"] = "stix"
     plt.rcParams["font.family"] = "STIXGeneral"
-    plt.rcParams["axes.linewidth"] = 1.5
+    plt.rcParams["axes.linewidth"] = 2.5
 
     stringfont = "serif"
 
-    ax.tick_params(axis="y", labelsize=20)
-    ax.tick_params(axis="x", labelsize=20)
-    plt.tick_params(
-        top=True, right=True, labeltop=False, labelright=False, direction="in"
+    ax.tick_params(
+        axis="y",
+        top=True,
+        right=True,
+        labeltop=False,
+        labelright=False,
+        width=2.5,
+        length=8,
+        direction="in",
+        labelsize=18,
     )
-    plt.tick_params(
-        top=True, right=True, labeltop=False, labelright=False, direction="in"
+    ax.tick_params(
+        axis="y",
+        which="minor",
+        top=True,
+        right=True,
+        labeltop=False,
+        labelright=False,
+        width=2.5,
+        length=4,
+        direction="in",
+        labelsize=18,
     )
+    ax.tick_params(
+        axis="x",
+        top=True,
+        right=True,
+        labeltop=False,
+        labelright=False,
+        width=2.5,
+        length=8,
+        direction="in",
+        labelsize=18,
+    )
+
+    ax.set_yscale("log")
+
+    plt.ylabel("Count", fontsize=26, fontfamily=stringfont)
+    plt.xlabel(r"$\mathrm{\frac{E}{N}}$", fontsize=26, fontfamily=stringfont)
+
+    plt.ylim(1, max_len_sample * 0.5)
 
     bins = np.linspace(min_eng, max_eng).tolist()
 
@@ -407,7 +440,7 @@ def plot_hist(
         _ = plt.hist(
             eng,
             bins=bins,
-            log=True,
+            # log=True,
             label=f"{labels[i]}",
             histtype="bar",
             alpha=0.9 - i * 0.1,
@@ -420,7 +453,7 @@ def plot_hist(
     _ = plt.hist(
         eng_truth,
         bins=bins,
-        log=True,
+        # log=True,
         label=f"{labels[i+1]}",
         histtype="bar",
         edgecolor="k",
@@ -437,6 +470,7 @@ def plot_hist(
             ground_state,
             1,
             max_len_sample * 0.5,
+            linewidth=4.0,
             colors="red",
             linestyles="dashed",
             alpha=0.7,
@@ -447,15 +481,13 @@ def plot_hist(
         f"\n{labels[i+1]} eng\nmean: {eng_truth.mean()}\nmin: {eng_truth.min()}  ({np.sum(eng_truth==eng_truth.min())} occurance(s))"
     )
 
-    plt.ylabel("Count", fontsize=26, fontfamily=stringfont)
-    plt.xlabel(r"$\mathrm{\frac{E}{N}}$", fontsize=26, fontfamily=stringfont)
-
     plt.ylim(1, max_len_sample * 0.5)
+
     plt.legend(loc="upper right", labelspacing=0.4, fontsize=18, borderpad=0.2)
 
     if save:
         plt.savefig(
-            "hist.png",
+            "images/hist.png",
             edgecolor="white",
             facecolor=fig.get_facecolor(),
             bbox_inches="tight",
