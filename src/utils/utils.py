@@ -346,8 +346,8 @@ def plot_hist(
     except:
         truth = truth
 
-    max_len_sample = truth.shape[0]
-    truth = np.reshape(truth, (max_len_sample, -1))
+    min_len_sample = truth.shape[0]
+    truth = np.reshape(truth, (min_len_sample, -1))
     spins = truth.shape[-1]
 
     # laod couplings
@@ -372,7 +372,7 @@ def plot_hist(
             sample = data
 
         sample = sample.squeeze()
-        max_len_sample = max(max_len_sample, sample.shape[0])
+        min_len_sample = min(min_len_sample, sample.shape[0])
         sample = np.reshape(sample, (-1, spins))
 
         eng = []
@@ -432,13 +432,13 @@ def plot_hist(
     plt.ylabel("Count", fontsize=26, fontfamily=stringfont)
     plt.xlabel(r"$\mathrm{\frac{E}{N}}$", fontsize=26, fontfamily=stringfont)
 
-    plt.ylim(1, max_len_sample * 0.5)
+    plt.ylim(1, min_len_sample * 0.5)
 
     bins = np.linspace(min_eng, max_eng).tolist()
 
     for i, eng in enumerate(engs):
         _ = plt.hist(
-            eng,
+            eng[:min_len_sample],
             bins=bins,
             # log=True,
             label=f"{labels[i]}",
@@ -451,7 +451,7 @@ def plot_hist(
             f"\n{labels[i]}\nmean: {eng.mean()}\nmin: {eng.min()} ({np.sum(eng==eng.min())} occurance(s))                                                                    (s))"
         )
     _ = plt.hist(
-        eng_truth,
+        eng_truth[:min_len_sample],
         bins=bins,
         # log=True,
         label=f"{labels[i+1]}",
@@ -463,13 +463,13 @@ def plot_hist(
     )
 
     if density:
-        max_len_sample = 200
+        min_len_sample = 200
 
     if ground_state is not None:
         plt.vlines(
             ground_state,
             1,
-            max_len_sample * 0.5,
+            min_len_sample * 0.5,
             linewidth=4.0,
             colors="red",
             linestyles="dashed",
@@ -481,7 +481,7 @@ def plot_hist(
         f"\n{labels[i+1]} eng\nmean: {eng_truth.mean()}\nmin: {eng_truth.min()}  ({np.sum(eng_truth==eng_truth.min())} occurance(s))"
     )
 
-    plt.ylim(1, max_len_sample * 0.5)
+    plt.ylim(1, min_len_sample * 0.5)
 
     plt.legend(loc="upper right", labelspacing=0.4, fontsize=18, borderpad=0.2)
 
@@ -510,6 +510,8 @@ def block_std(engs: List[np.ndarray], len_block: int, skip: int = 0) -> float:
     """
     std_engs = []
     for eng in engs:
+        if isinstance(eng, list):
+            eng = np.asarray(eng)
         eng = eng[skip:].copy()
         rest_len = eng.size % len_block
         if rest_len != 0:
@@ -535,6 +537,8 @@ def block_mean(engs: List[np.ndarray], len_block: int, skip: int = 0) -> float:
     """
     mean_engs = []
     for eng in engs:
+        if isinstance(eng, list):
+            eng = np.asarray(eng)
         eng = eng[skip:].copy()
         rest_len = eng.size % len_block
         if rest_len != 0:
