@@ -42,7 +42,7 @@ def generate(
     # instantiate the trainer
     trainer = Trainer(devices="auto", accelerator="auto")
 
-    print(f"\nGenerating sample")
+    print(f"\nGenerating {num_sample} sample")
     pred = trainer.predict(model=model, dataloaders=dataloader, ckpt_path=ckpt_path)
 
     size = model.hparams.input_size

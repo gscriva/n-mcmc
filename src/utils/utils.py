@@ -257,15 +257,6 @@ def load_data(
     """Load generated sample from path or directly from the file.
 
     Args:
-        sample_path (Union[str, Dict[str, np.ndarray]]): Path to the generated sample or sample itself.
-
-    Raises:
-        ValueError: Wrong path or corrupted data.
-
-    Returns:
-        Tuple[np.ndarray, np.ndarray]: Sample and their log probability.
-
-    Args:
         sample_path (Union[str, Dict[str, np.ndarray]]): Path to the generated sample, to the model or to the samples theirself.
         model (Optional[str], optional): Model to use. Defaults to None.
         steps (Optional[int], optional): Steps of the Monte Carlo simulation. Defaults to None.
