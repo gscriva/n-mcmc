@@ -16,7 +16,7 @@ from src.utils.utils import compute_prob
 
 class Made(LightningModule):
     def __init__(self, *args, **kwargs):
-        super().__init__()
+        super(Made, self).__init__()
 
         # this line ensures params passed to LightningModule will be saved to ckpt
         # it also allows to access params with 'self.hparams' attribute
@@ -54,7 +54,7 @@ class Made(LightningModule):
         pass
 
     def validation_step(self, x: Tensor, batch_idx: int):
-        loss, logits = self.step(x)
+        loss, _ = self.step(x)
 
         # update the mask for every epoch
         self.model.update_masks(self.hparams)
@@ -68,7 +68,7 @@ class Made(LightningModule):
         pass
 
     def test_step(self, x: Tensor, batch_idx: int):
-        loss, logits = self.step(x)
+        loss, _ = self.step(x)
 
         # log test metrics
         self.log("test/loss", loss)
