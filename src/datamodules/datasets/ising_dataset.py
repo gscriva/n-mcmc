@@ -18,12 +18,12 @@ class ISINGDataset(Dataset):
         # load the dataset and consider input in {0,1}
         self.dataset = (torch.from_numpy(np.load(self.path)).float() + 1) / 2
         # some models need ravel inputs
-        if kwargs["model"] == "src.models.made.Made":
-            self.dataset = self.dataset.view(len(self.dataset), -1)
-        else:
+        if kwargs["model"] == "src.models.pixel_cnn.PixelCNN":
             self.dataset = self.dataset.view(
                 len(self.dataset), 1, kwargs["input_size"], kwargs["input_size"]
             )
+        else:
+            self.dataset = self.dataset.view(len(self.dataset), -1)
 
         # check if data match with model's input size
         assert self.dataset.shape[-1] == kwargs["input_size"]
