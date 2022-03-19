@@ -6,7 +6,9 @@ from src.generate import generate
 # Parser
 parser = argparse.ArgumentParser()
 parser.add_argument("--ckpt-path", type=Path, help="Path to the checkpoint")
-parser.add_argument("--model", type=str, choices=["made", "pixel"], help="Model to use")
+parser.add_argument(
+    "--model", type=str, choices=["made", "pixel", "rbm"], help="Model to use"
+)
 parser.add_argument(
     "--num-sample",
     type=int,

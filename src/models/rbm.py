@@ -1,11 +1,13 @@
-from typing import Any, List, Tuple
+from math import sqrt
+from typing import Any, Dict, List, Tuple
 
 import hydra
-from pytorch_lightning import LightningModule
+import numpy as np
 import torch
+import torch.nn.functional as F
+from pytorch_lightning import LightningModule
 from torch import nn
 from torch.functional import Tensor
-import torch.nn.functional as F
 from torch.optim import Optimizer
 
 
@@ -35,23 +37,23 @@ class RBM(LightningModule):
         hidd_term = (wx.exp() + 1).log().sum(1)
         return (-bias_term - hidd_term).mean()
 
-    def _to_hidden(self, x):
+    def _to_hidden(self, x: Tensor) -> Tensor:
         prob = torch.sigmoid(F.linear(x, self.W, self.c))
         return prob.bernoulli()
 
-    def _to_visible(self, h):
+    def _to_visible(self, h: Tensor) -> Tuple[Tensor, Tensor]:
         prob = torch.sigmoid(F.linear(h, self.W.t(), self.b))
-        return prob.bernoulli()
+        return prob.bernoulli(), prob
 
     def step(self, x: Tensor) -> Tensor:
         h = self._to_hidden(x)
         for _ in range(self.hparams["k"]):
-            x_gibbs = self._to_visible(h)
+            x_gibbs, x_prob = self._to_visible(h)
             h = self._to_hidden(x_gibbs)
-        return x_gibbs
+        return x_gibbs, x_prob
 
     def training_step(self, x: Tensor, batch_idx: int) -> Tensor:
-        x_gibbs = self.step(x)
+        x_gibbs, _ = self.step(x)
         loss = self.criterion(x, x_gibbs)
         # log the metric
         self.log("train/loss", loss)
@@ -59,7 +61,7 @@ class RBM(LightningModule):
         return loss
 
     def validation_step(self, x: Tensor, batch_idx: int) -> Tensor:
-        x_gibbs = self.step(x)
+        x_gibbs, _ = self.step(x)
         loss = self.criterion(x, x_gibbs)
         # log the metric
         self.log("val/loss", loss)
@@ -67,12 +69,26 @@ class RBM(LightningModule):
         return loss
 
     def test_step(self, x: Tensor, batch_idx: int) -> Tensor:
-        x_gibbs = self.step(x)
+        x_gibbs, _ = self.step(x)
         loss = self.criterion(x, x_gibbs)
         # log the metric
         self.log("test/loss", loss)
 
         return loss
+
+    @torch.no_grad()
+    def predict_step(
+        self, batch, batch_idx: int, dataloader_idx: int = None
+    ) -> Dict[str, np.ndarray]:
+        sample, prob = self.step(batch)
+
+        input_side = int(sqrt(self.hparams["input_size"]))
+
+        sample = sample.detach().cpu().numpy().astype("int8")
+        sample = np.reshape(sample, (-1, input_side, input_side)) * 2 - 1
+        log_prob = np.log(prob.detach().cpu().numpy())
+
+        return {"sample": sample, "log_prob": log_prob}
 
     def configure_optimizers(
         self,

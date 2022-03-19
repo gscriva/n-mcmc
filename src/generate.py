@@ -6,6 +6,7 @@ from torch.utils.data import DataLoader
 from src.datamodules.ising_datamodule import worker_init_fn
 from src.models.made import Made
 from src.models.pixel_cnn import PixelCNN
+from src.models.rbm import RBM
 
 
 def generate(
@@ -21,9 +22,13 @@ def generate(
     if model == "pixel":
         model = PixelCNN.load_from_checkpoint(ckpt_path)
         shape = (num_sample, 1, model.hparams.input_size, model.hparams.input_size)
-    else:
+    elif model == "made":
         model = Made.load_from_checkpoint(ckpt_path)
         shape = (num_sample, model.hparams.input_size)
+    else:
+        model = RBM.load_from_checkpoint(ckpt_path)
+        shape = (num_sample, model.hparams.input_size)
+
     if verbose:
         # print configs from trained model
         print(model.hparams)
