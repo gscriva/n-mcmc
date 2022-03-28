@@ -1,5 +1,5 @@
 from math import sqrt
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Optional
 
 import hydra
 import numpy as np
@@ -9,6 +9,8 @@ from pytorch_lightning import LightningModule
 from torch import nn
 from torch.functional import Tensor
 from torch.optim import Optimizer
+
+from src.utils.metrics import Mean
 
 
 class RBM(LightningModule):
@@ -27,9 +29,11 @@ class RBM(LightningModule):
         self.c = nn.Parameter(torch.randn(self.hparams["n_hidden"]))
         # loss function
         self.criterion = self._free_energy_loss
+        # real energy
+        self.mean_energy = Mean()
 
-    def _free_energy_loss(self, x: Tensor, pred: Tensor) -> Tensor:
-        return self._free_energy(x) - self._free_energy(pred)
+    def _free_energy_loss(self, x: Tensor, x_gibbs: Tensor) -> Tensor:
+        return self._free_energy(x) - self._free_energy(x_gibbs)
 
     def _free_energy(self, x: Tensor) -> Tensor:
         bias_term = torch.matmul(x.unsqueeze(0), self.b)
@@ -39,15 +43,17 @@ class RBM(LightningModule):
 
     def _to_hidden(self, x: Tensor) -> Tensor:
         prob = torch.sigmoid(F.linear(x, self.W, self.c))
-        return prob.bernoulli()
+        m = torch.distributions.bernoulli.Bernoulli(prob)
+        return m.sample()
 
     def _to_visible(self, h: Tensor) -> Tuple[Tensor, Tensor]:
         prob = torch.sigmoid(F.linear(h, self.W.t(), self.b))
-        return prob.bernoulli(), prob
+        m = torch.distributions.bernoulli.Bernoulli(prob)
+        return m.sample(), prob
 
-    def step(self, x: Tensor) -> Tensor:
+    def step(self, x: Tensor, k: Optional[int] = None) -> Tensor:
         h = self._to_hidden(x)
-        for _ in range(self.hparams["k"]):
+        for _ in range(self.hparams["k"] if k is None else k):
             x_gibbs, x_prob = self._to_visible(h)
             h = self._to_hidden(x_gibbs)
         return x_gibbs, x_prob
@@ -61,10 +67,13 @@ class RBM(LightningModule):
         return loss
 
     def validation_step(self, x: Tensor, batch_idx: int) -> Tensor:
-        x_gibbs, _ = self.step(x)
+        x_gibbs, _ = self.step(x, 10)
+        # update energy computation
+        self.mean_energy(x_gibbs)
+        # compute rbm loss as well
         loss = self.criterion(x, x_gibbs)
         # log the metric
-        self.log("val/loss", loss)
+        self.log_dict({"val/loss": loss, "val/eng": self.mean_energy})
 
         return loss
 
@@ -78,9 +87,9 @@ class RBM(LightningModule):
 
     @torch.no_grad()
     def predict_step(
-        self, batch, batch_idx: int, dataloader_idx: int = None
+        self, batch, batch_idx: int, k: Optional[int] = None, dataloader_idx: int = None
     ) -> Dict[str, np.ndarray]:
-        sample, prob = self.step(batch)
+        sample, prob = self.step(batch, k=k)
 
         input_side = int(sqrt(self.hparams["input_size"]))
 
