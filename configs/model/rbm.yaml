@@ -1,7 +1,7 @@
 _target_: src.models.rbm.RBM
 input_size: 100
-n_hidden: 64
-k: 1
+n_hidden: 32
+k: 2
 
 optim:
   optimizer:
