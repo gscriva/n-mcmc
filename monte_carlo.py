@@ -49,7 +49,7 @@ parser_neural.add_argument(
     "--path", type=str, help="Path to the model or to the generated sample"
 )
 parser_neural.add_argument(
-    "--model", type=str, choices=["made", "pixel"], help="Model to use"
+    "--model", type=str, choices=["made", "pixel", "rbm"], help="Model to use"
 )
 parser_neural.add_argument(
     "--batch-size", type=int, default=20000, help="Size of each batch (default: 20000)"
@@ -60,7 +60,7 @@ parser_hybrid.add_argument(
     "--path", type=str, help="Path to the model or to the generated sample"
 )
 parser_hybrid.add_argument(
-    "--model", type=str, choices=["made", "pixel"], help="Model to use"
+    "--model", type=str, choices=["made", "pixel", "rbm"], help="Model to use"
 )
 parser_hybrid.add_argument(
     "--model-path",

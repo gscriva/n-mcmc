@@ -13,6 +13,7 @@ def generate(
     ckpt_path: str,
     model: str,
     num_sample: str = 1,
+    k_steps: int = 1,
     batch_size: int = 20000,
     num_workers: int = 1,
     save_sample: bool = False,
@@ -27,13 +28,15 @@ def generate(
         shape = (num_sample, model.hparams.input_size)
     else:
         model = RBM.load_from_checkpoint(ckpt_path)
+        model.hparams["k"] = k_steps
         shape = (num_sample, model.hparams.input_size)
 
     if verbose:
         # print configs from trained model
         print(model.hparams)
 
-    dataset = torch.zeros(shape, device=model.device)
+    dataset = torch.rand(shape, device=model.device)
+
     # make it easy,
     # define only a DataLoader instead of a LightningDataModule
     dataloader = DataLoader(

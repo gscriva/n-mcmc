@@ -42,21 +42,19 @@ class RBM(LightningModule):
         return (-bias_term - hidd_term).mean()
 
     def _to_hidden(self, x: Tensor) -> Tensor:
-        prob = torch.sigmoid(F.linear(x, self.W, self.c))
-        m = torch.distributions.bernoulli.Bernoulli(prob)
-        return m.sample()
+        log_prob = torch.LogSigmoid(F.linear(x, self.W, self.c))
+        return torch.bernoulli(torch.exp(log_prob))
 
     def _to_visible(self, h: Tensor) -> Tuple[Tensor, Tensor]:
-        prob = torch.sigmoid(F.linear(h, self.W.t(), self.b))
-        m = torch.distributions.bernoulli.Bernoulli(prob)
-        return m.sample(), prob
+        log_prob = torch.LogSigmoid(F.linear(h, self.W.t(), self.b))
+        return torch.bernoulli(torch.exp(log_prob)), log_prob
 
-    def step(self, x: Tensor, k: Optional[int] = None) -> Tensor:
+    def step(self, x: Tensor) -> Tensor:
         h = self._to_hidden(x)
-        for _ in range(self.hparams["k"] if k is None else k):
-            x_gibbs, x_prob = self._to_visible(h)
+        for _ in range(self.hparams["k"]):
+            x_gibbs, x_log_prob = self._to_visible(h)
             h = self._to_hidden(x_gibbs)
-        return x_gibbs, x_prob
+        return x_gibbs, x_log_prob
 
     def training_step(self, x: Tensor, batch_idx: int) -> Tensor:
         x_gibbs, _ = self.step(x)
@@ -73,6 +71,7 @@ class RBM(LightningModule):
         # compute rbm loss as well
         loss = self.criterion(x, x_gibbs)
         # log the metric
+        # mean energy performs better as validation loss
         self.log_dict({"val/loss": self.mean_energy, "val/rbm_loss": loss})
 
         return loss
@@ -87,16 +86,16 @@ class RBM(LightningModule):
 
     @torch.no_grad()
     def predict_step(
-        self, batch, batch_idx: int, k: Optional[int] = None, dataloader_idx: int = None
+        self, batch, batch_idx: int, dataloader_idx: int = None
     ) -> Dict[str, np.ndarray]:
-        sample, prob = self.step(batch, k=k)
+        sample, log_prob = self.step(batch)
 
         input_side = int(sqrt(self.hparams["input_size"]))
 
         sample = sample.detach().cpu().numpy().astype("int8")
         sample = np.reshape(sample, (-1, input_side, input_side)) * 2 - 1
         # compute sample log probability
-        log_prob = np.log(prob.detach().cpu().numpy()).sum(-1)
+        log_prob = log_prob.detach().cpu().numpy().sum(-1)
 
         return {"sample": sample, "log_prob": log_prob}
 

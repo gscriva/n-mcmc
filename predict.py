@@ -13,8 +13,16 @@ parser.add_argument(
     "--num-sample",
     type=int,
     default=1,
-    help="Number of sample to generate (default: 2)",
+    help="Number of sample to generate (default: 1)",
 )
+
+parser.add_argument(
+    "--k-steps",
+    type=int,
+    default=1,
+    help="Number of Gibbs steps to generate, only for RBM (default: 1)",
+)
+
 parser.add_argument(
     "--batch-size",
     type=int,
@@ -47,6 +55,7 @@ def main(args: argparse.ArgumentParser):
         args.ckpt_path,
         args.model,
         args.num_sample,
+        args.k_steps,
         args.batch_size,
         args.num_workers,
         args.save_sample,
