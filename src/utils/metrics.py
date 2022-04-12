@@ -11,7 +11,7 @@ class Mean(Metric):
 
         self.spins = 100
         self.couplings_path = (
-            "/home/beppe/neural-mcmc/data/couplings/100spins_open-1nn.txt"
+            "/home/gscriva/neural-mcmc/data/couplings/100spins_open-1nn.txt"
         )
 
         self.neighbours, self.couplings, self.len_neighbours = get_couplings(

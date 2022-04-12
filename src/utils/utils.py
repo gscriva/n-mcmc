@@ -375,7 +375,7 @@ def plot_hist(
         max_eng = max(max_eng, eng.max())
         engs.append(eng)
 
-    fig, ax = plt.subplots(figsize=(7.8, 7.8), dpi=128, facecolor="white")
+    fig, ax = plt.subplots(figsize=(7.8, 7.8), dpi=128)
 
     plt.rcParams["mathtext.fontset"] = "stix"
     plt.rcParams["font.family"] = "STIXGeneral"
@@ -420,10 +420,11 @@ def plot_hist(
 
     ax.set_yscale("log")
 
-    plt.ylabel("Count", fontsize=26, fontfamily=stringfont)
-    plt.xlabel(r"$\mathrm{\frac{E}{N}}$", fontsize=26, fontfamily=stringfont)
+    plt.ylabel("Count", fontsize=30, fontfamily=stringfont)
+    plt.xlabel(r"$E/N$", fontsize=30, fontfamily=stringfont)
 
     plt.ylim(1, min_len_sample * 0.5)
+    plt.xlim(-1.28, -0.3)
 
     bins = np.linspace(min_eng, max_eng).tolist()
 
@@ -474,13 +475,16 @@ def plot_hist(
 
     plt.ylim(1, min_len_sample * 0.5)
 
-    plt.legend(loc="upper right", labelspacing=0.4, fontsize=18, borderpad=0.2)
+    plt.legend(
+        loc="upper right", labelspacing=0.4, fontsize=22, borderpad=0.2, fancybox=True
+    )
 
     if save:
         plt.savefig(
             "images/hist.png",
             edgecolor="white",
             facecolor=fig.get_facecolor(),
+            transparent=True,
             bbox_inches="tight",
         )
 

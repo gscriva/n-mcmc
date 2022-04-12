@@ -4,32 +4,32 @@ datasets:
   train:
     _target_: src.datamodules.datasets.ising_dataset.ISINGDataset
     name: train_100_lattice_2d_ising_spins
-    path: ${oc.env:TRAIN_DATASET_PATH}
+    path: ${work_dir}/train-100spins-1nn-20.npy
     input_size: ${model.input_size}
     model: ${model._target_}
 
   val:
     _target_: src.datamodules.datasets.ising_dataset.ISINGDataset
     name: val_100_lattice_2d_ising_spins
-    path: ${oc.env:VAL_DATASET_PATH}
+    path: ${work_dir}/test-100spins-1nn-20.npy
     input_size: ${model.input_size}
     model: ${model._target_}
 
   test:
     _target_: src.datamodules.datasets.ising_dataset.ISINGDataset
     name: test_100_lattice_2d_ising_spins
-    path: ${oc.env:TEST_DATASET_PATH}
+    path: /home/gscriva/neural-mcmc/data/dataset/484-1nn-10mu/DWAVE-test-484spins-10mu.npy
     input_size: ${model.input_size}
     model: ${model._target_}
 
   # data_dir: ${data_dir} # data_dir is specified in config.yaml
 
 num_workers:
-  train: 4
-  val: 4
-  test: 4
+  train: 6
+  val: 2
+  test: 2
 
 batch_size:
-  train: 64
+  train: 96
   val: 128
   test: 128

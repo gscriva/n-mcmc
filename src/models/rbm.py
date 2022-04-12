@@ -73,7 +73,7 @@ class RBM(LightningModule):
         # compute rbm loss as well
         loss = self.criterion(x, x_gibbs)
         # log the metric
-        self.log_dict({"val/loss": loss, "val/eng": self.mean_energy})
+        self.log_dict({"val/loss": self.mean_energy, "val/rbm_loss": loss})
 
         return loss
 
@@ -95,7 +95,8 @@ class RBM(LightningModule):
 
         sample = sample.detach().cpu().numpy().astype("int8")
         sample = np.reshape(sample, (-1, input_side, input_side)) * 2 - 1
-        log_prob = np.log(prob.detach().cpu().numpy())
+        # compute sample log probability
+        log_prob = np.log(prob.detach().cpu().numpy()).sum(-1)
 
         return {"sample": sample, "log_prob": log_prob}
 

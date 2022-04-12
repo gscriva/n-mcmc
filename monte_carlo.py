@@ -1,7 +1,12 @@
 import argparse
 from multiprocessing import Pool
 
-from src.utils.montecarlo import hybrid_mcmc, neural_mcmc, single_spin_flip
+from src.utils.montecarlo import (
+    hybrid_mcmc,
+    neural_mcmc,
+    seq_hybrid_mcmc,
+    single_spin_flip,
+)
 
 parser = argparse.ArgumentParser()
 
@@ -72,6 +77,14 @@ parser_hybrid.add_argument(
     default=0.5,
     help="Probability of single spin flip step (default: 0.5)",
 )
+
+parser_hybrid.add_argument(
+    "--len-seq-single",
+    type=int,
+    default=None,
+    help="Lenght of single spin flip consecutive steps (default: None)",
+)
+
 parser_hybrid.add_argument(
     "--save-every",
     type=int,
@@ -79,12 +92,13 @@ parser_hybrid.add_argument(
     help="Save every n steps to get uncorrelated data (default: 1)",
 )
 
-MAX_CPUS = 20
+MAX_CPUS = 12
 
 
 def main(args: argparse.ArgumentParser):
     print(args)
     disable_bar = False
+    # remove bar for multiple proc
     if len(args.beta) > 1:
         disable_bar = True
     if args.type == "single":
@@ -114,7 +128,7 @@ def main(args: argparse.ArgumentParser):
         for beta in args.beta:
             neural_mcmc(
                 beta,
-                args.steps - 1,
+                args.steps,
                 args.path,
                 args.couplings_path,
                 args.model,
@@ -126,21 +140,39 @@ def main(args: argparse.ArgumentParser):
             )
 
     elif args.type == "hybrid":
-        for beta in args.beta:
-            hybrid_mcmc(
-                beta,
-                args.steps,
-                args.path,
-                args.couplings_path,
-                args.model,
-                args.model_path,
-                args.batch_size,
-                args.prob_single,
-                args.verbose,
-                args.save,
-                args.save_every,
-                disable_bar,
-            )
+        if args.len_seq_single is not None:
+            # the
+            for beta in args.beta:
+                seq_hybrid_mcmc(
+                    beta,
+                    args.steps,
+                    args.path,
+                    args.couplings_path,
+                    args.model,
+                    args.model_path,
+                    args.batch_size,
+                    args.len_seq_single,
+                    args.verbose,
+                    args.save,
+                    args.save_every,
+                    disable_bar,
+                )
+        else:
+            for beta in args.beta:
+                hybrid_mcmc(
+                    beta,
+                    args.steps,
+                    args.path,
+                    args.couplings_path,
+                    args.model,
+                    args.model_path,
+                    args.batch_size,
+                    args.prob_single,
+                    args.verbose,
+                    args.save,
+                    args.save_every,
+                    disable_bar,
+                )
 
 
 if __name__ == "__main__":
