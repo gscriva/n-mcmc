@@ -10,9 +10,7 @@ class MeanMAE(Metric):
         super().__init__(dist_sync_on_step=dist_sync_on_step)
 
         self.spins = 100
-        self.couplings_path = (
-            "/home/gscriva/neural-mcmc/data/couplings/100spins_open-1nn.txt"
-        )
+        self.couplings_path = "data/couplings/100spins_open-1nn.txt"
 
         self.neighbours, self.couplings, self.len_neighbours = get_couplings(
             spin_side=int(np.sqrt(self.spins)),
