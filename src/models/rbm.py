@@ -10,7 +10,7 @@ from torch import nn
 from torch.functional import Tensor
 from torch.optim import Optimizer
 
-from src.utils.metrics import Mean
+from src.utils.metrics import MeanMAE
 
 
 class RBM(LightningModule):
@@ -30,7 +30,7 @@ class RBM(LightningModule):
         # loss function
         self.criterion = self._free_energy_loss
         # real energy
-        self.mean_energy = Mean()
+        self.mean_energy_mae = MeanMAE()
 
     def _free_energy_loss(self, x: Tensor, x_gibbs: Tensor) -> Tensor:
         return self._free_energy(x) - self._free_energy(x_gibbs)
@@ -42,16 +42,16 @@ class RBM(LightningModule):
         return (-bias_term - hidd_term).mean()
 
     def _to_hidden(self, x: Tensor) -> Tensor:
-        log_prob = torch.LogSigmoid(F.linear(x, self.W, self.c))
+        log_prob = F.logsigmoid(F.linear(x, self.W, self.c))
         return torch.bernoulli(torch.exp(log_prob))
 
     def _to_visible(self, h: Tensor) -> Tuple[Tensor, Tensor]:
-        log_prob = torch.LogSigmoid(F.linear(h, self.W.t(), self.b))
+        log_prob = F.logsigmoid(F.linear(h, self.W.t(), self.b))
         return torch.bernoulli(torch.exp(log_prob)), log_prob
 
-    def step(self, x: Tensor) -> Tensor:
+    def step(self, x: Tensor, k: Optional[int] = None) -> Tensor:
         h = self._to_hidden(x)
-        for _ in range(self.hparams["k"]):
+        for _ in range(self.hparams["k"] if k is None else k):
             x_gibbs, x_log_prob = self._to_visible(h)
             h = self._to_hidden(x_gibbs)
         return x_gibbs, x_log_prob
@@ -67,12 +67,17 @@ class RBM(LightningModule):
     def validation_step(self, x: Tensor, batch_idx: int) -> Tensor:
         x_gibbs, _ = self.step(x, 10)
         # update energy computation
-        self.mean_energy(x_gibbs)
+        self.mean_energy_mae(x_gibbs, x)
         # compute rbm loss as well
         loss = self.criterion(x, x_gibbs)
         # log the metric
         # mean energy performs better as validation loss
-        self.log_dict({"val/loss": self.mean_energy, "val/rbm_loss": loss})
+        self.log_dict(
+            {
+                "val/loss": self.mean_energy_mae,
+                "val/rbm_loss": loss,
+            }
+        )
 
         return loss
 
