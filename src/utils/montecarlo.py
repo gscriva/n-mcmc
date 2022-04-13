@@ -1,12 +1,13 @@
 import math
 from datetime import datetime
-from typing import Dict, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
 from tqdm import tqdm
 
 from src.models.made import Made
+from src.models.rbm import RBM
 from src.utils.utils import (
     compute_boltz_prob,
     compute_delta_h,
@@ -687,3 +688,71 @@ def seq_hybrid_mcmc(
     print(f"Accepted Neural after Single {neural_after_single}")
     print(f"Duration {datetime.now() - start_time}\n")
     return (samples, energies, accepted / steps * 100)
+
+
+def gibbs_rbm(
+    spins: int,
+    steps: int,
+    path: str,
+    betas: List[int],
+    couplings_path: str,
+    verbose: bool = False,
+    save: bool = False,
+    save_every: int = 1,
+    disable_bar: bool = False,
+) -> Tuple[np.ndarray, np.ndarray]:
+    model = RBM.load_from_checkpoint(path)
+
+    # get neighbourhood and couplings matrix
+    spin_side = int(math.sqrt(spins))
+    neighbours, couplings, len_neighbours = get_couplings(spin_side, couplings_path)
+
+    # initialisation
+    energies = []
+    samples = []
+    # start with a random sample
+    accepted_sample = torch.bernoulli(torch.ones(spins) * 0.5) * 2 - 1
+
+    disable = verbose + disable_bar
+    # reduce correlation
+    steps *= save_every
+    pbar = tqdm(range(steps), disable=disable)
+    for step in pbar:
+        h = model._to_hidden(accepted_sample)
+        sample, _ = model._to_visible(h)
+
+        accepted_sample = sample
+        if step % save_every == 0:
+            sample = sample.detach().cpu().numpy() * 2 - 1
+            samples.append(sample)
+            energies.append(
+                compute_energy(
+                    sample,
+                    neighbours,
+                    couplings,
+                    len_neighbours,
+                )
+            )
+
+        pbar.set_postfix(
+            {
+                "eng": np.asarray(energies).mean() / spins,
+                "err": np.asarray(energies).std()
+                / math.sqrt(len(energies))
+                / spins ** 2,
+            }
+        )
+
+    samples = np.asarray(samples).astype("int8")
+    energies = np.asarray(energies).astype(np.float)
+    if save:
+        filename = (
+            f"{str(spins)}spins_beta{betas}_{math.ceil(steps/save_every)}rbm-mcmc"
+        )
+        out = {
+            "sample": samples,
+            "energy": energies,
+        }
+        print("\nSaving MCMC output as {0}\n".format(filename))
+        np.savez(filename, **out)
+    return (samples, energies)
