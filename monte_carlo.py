@@ -1,14 +1,14 @@
 import argparse
 from multiprocessing import Pool
-
-from aiohttp import BadContentDispositionHeader
+from pathlib import Path
 
 from src.utils.montecarlo import (
+    gibbs_rbm,
+    exchange_rbm,
     hybrid_mcmc,
     neural_mcmc,
     seq_hybrid_mcmc,
     single_spin_flip,
-    gibbs_rbm,
 )
 
 parser = argparse.ArgumentParser()
@@ -34,7 +34,10 @@ parser_single = subparsers.add_parser(
 )
 parser_neural = subparsers.add_parser("neural", help="Neural MCMC")
 parser_hybrid = subparsers.add_parser("hybrid", help="Hybrid MCMC")
-parser_gibbs = subparsers.add_parser("gibbs-rbm", help="Gibbs MCMC via RBM")
+parser_gibbs = subparsers.add_parser("gibbs", help="Gibbs MCMC via RBM")
+parser_exchange_rbm = subparsers.add_parser(
+    "exchange-rbm", help="Gibbs and Single Spin Flip MCMC via RBM"
+)
 
 parser_single.add_argument("--type", type=str, default="single", help=argparse.SUPPRESS)
 parser_single.add_argument(
@@ -50,7 +53,7 @@ parser_single.add_argument(
 
 parser_neural.add_argument("--type", type=str, default="neural", help=argparse.SUPPRESS)
 parser_neural.add_argument(
-    "--path", type=str, help="Path to the model or to the generated sample"
+    "--path", type=Path, help="Path to the model or to the generated sample"
 )
 parser_neural.add_argument(
     "--model", type=str, choices=["made", "pixel", "rbm"], help="Model to use"
@@ -61,14 +64,14 @@ parser_neural.add_argument(
 
 parser_hybrid.add_argument("--type", type=str, default="hybrid", help=argparse.SUPPRESS)
 parser_hybrid.add_argument(
-    "--path", type=str, help="Path to the model or to the generated sample"
+    "--path", type=Path, help="Path to the model or to the generated sample"
 )
 parser_hybrid.add_argument(
     "--model", type=str, choices=["made", "pixel", "rbm"], help="Model to use"
 )
 parser_hybrid.add_argument(
     "--model-path",
-    type=str,
+    type=Path,
     default=None,
     help="Path to the model, if not given in path's argument (default: None)",
 )
@@ -89,10 +92,13 @@ parser_hybrid.add_argument(
     help="Lenght of single spin flip consecutive steps (default: None)",
 )
 
-parser_gibbs.add_argument(
-    "--type", type=str, default="gibbs-rbm", help=argparse.SUPPRESS
+parser_gibbs.add_argument("--type", type=str, default="gibbs", help=argparse.SUPPRESS)
+parser_gibbs.add_argument("--path", type=Path, help="Path to the model")
+
+parser_exchange_rbm.add_argument(
+    "--type", type=str, default="exchange-rbm", help=argparse.SUPPRESS
 )
-parser_gibbs.add_argument("--path", type=str, help="Path to the model")
+parser_exchange_rbm.add_argument("--path", type=Path, help="Path to the model")
 
 MAX_CPUS = 12
 
@@ -174,17 +180,30 @@ def main(args: argparse.ArgumentParser):
                     args.save_every,
                     disable_bar,
                 )
-    elif args.type == "gibbs-rbm":
-        gibbs_rbm(
-            args.spins,
-            args.steps,
-            args.path,
-            args.beta,
-            args.couplings_path,
-            args.verbose,
-            args.save,
-            args.save_every,
-        )
+    elif args.type == "gibbs":
+        for beta in args.beta:
+            gibbs_rbm(
+                args.spins,
+                args.steps,
+                args.path,
+                beta,
+                args.couplings_path,
+                args.verbose,
+                args.save,
+                args.save_every,
+            )
+    elif args.type == "exchange-rbm":
+        for beta in args.beta:
+            exchange_rbm(
+                args.spins,
+                args.steps,
+                args.path,
+                beta,
+                args.couplings_path,
+                args.verbose,
+                args.save,
+                args.save_every,
+            )
 
 
 if __name__ == "__main__":

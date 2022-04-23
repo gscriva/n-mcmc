@@ -694,14 +694,16 @@ def gibbs_rbm(
     spins: int,
     steps: int,
     path: str,
-    betas: List[int],
+    betas: int,
     couplings_path: str,
     verbose: bool = False,
     save: bool = False,
     save_every: int = 1,
     disable_bar: bool = False,
 ) -> Tuple[np.ndarray, np.ndarray]:
-    model = RBM.load_from_checkpoint(path)
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+
+    model = RBM.load_from_checkpoint(path).to(device)
 
     # get neighbourhood and couplings matrix
     spin_side = int(math.sqrt(spins))
@@ -711,7 +713,7 @@ def gibbs_rbm(
     energies = []
     samples = []
     # start with a random sample
-    accepted_sample = torch.bernoulli(torch.ones(spins) * 0.5) * 2 - 1
+    accepted_sample = torch.bernoulli(torch.ones(spins, device=device) * 0.5) * 2 - 1
 
     disable = verbose + disable_bar
     # reduce correlation
@@ -746,9 +748,7 @@ def gibbs_rbm(
     samples = np.asarray(samples).astype("int8")
     energies = np.asarray(energies).astype(np.float)
     if save:
-        filename = (
-            f"{str(spins)}spins_beta{betas}_{math.ceil(steps/save_every)}rbm-mcmc"
-        )
+        filename = f"{str(spins)}spins_beta{betas}_{math.ceil(steps/save_every)}rbm-{path.parts[-4]}_{path.parts[-3]}-mcmc"
         out = {
             "sample": samples,
             "energy": energies,
@@ -756,3 +756,139 @@ def gibbs_rbm(
         print("\nSaving MCMC output as {0}\n".format(filename))
         np.savez(filename, **out)
     return (samples, energies)
+
+
+def exchange_rbm(
+    spins: int,
+    steps: int,
+    path: str,
+    beta: int,
+    couplings_path: str,
+    verbose: bool = False,
+    save: bool = False,
+    save_every: int = 1,
+    disable_bar: bool = False,
+) -> Tuple[np.ndarray, np.ndarray]:
+    start_time = datetime.now()
+
+    model = RBM.load_from_checkpoint(path)
+
+    # get neighbourhood and couplings matrix
+    spin_side = int(math.sqrt(spins))
+    neighbours, couplings, len_neighbours = get_couplings(spin_side, couplings_path)
+
+    # initialisation
+    energies_rbm = []
+    samples_rbm = []
+    energies_single = []
+    samples_single = []
+    accepted = 0
+    swap = 0
+
+    # start with a random sample
+    # rbm uses {0,1} spins
+    sample_rbm = torch.bernoulli(torch.ones(spins, requires_grad=False) * 0.5)
+    # single spin flip uses {+1,-1} spins
+    sample_single = sample_rbm.numpy() * 2 - 1
+    # compute energy for the starting sample
+    eng_single = compute_energy(sample_single, neighbours, couplings, len_neighbours)
+    # print(eng_single)
+
+    disable = verbose + disable_bar
+    # reduce correlation
+    steps *= save_every
+    pbar = tqdm(range(steps), disable=disable)
+    for step in pbar:
+        # single spin flip step
+        k = np.random.randint(0, spins)
+        # Metropolis-Hastings algorithm https://doi.org/10.2307/2334940
+        deltah = compute_delta_h(
+            k, sample_single, neighbours[k], couplings[k], len_neighbours[k]
+        )
+        # if delta change is negative, we accept.
+        # otherwise we accept based on the following probability
+        if deltah < 0.0 or np.random.ranf() < np.exp(-beta * deltah):
+            sample_single[k] = -sample_single[k]
+            # update energy
+            eng_single += deltah
+            accepted += 1
+
+        if step < 10:
+            sample_rbm = torch.tensor(sample_single + 1) / 2
+            continue
+
+        # gibbs sampling step
+        h_rbm = model._to_hidden(sample_rbm)
+        sample_rbm, _ = model._to_visible(h_rbm)
+
+        eng_rbm = compute_energy(
+            sample_rbm.detach().numpy() * 2 - 1,
+            neighbours,
+            couplings,
+            len_neighbours,
+        )
+
+        if step % save_every == 0:
+            samples_rbm.append(sample_rbm.detach().numpy() * 2 - 1)
+            energies_rbm.append(eng_rbm)
+            samples_single.append(sample_single.copy())
+            energies_single.append(eng_single)
+
+        boltz_log_prob_single = compute_boltz_prob(eng_single, beta, spins)
+        boltz_log_prob_rbm = compute_boltz_prob(eng_rbm, beta, spins)
+        rbm_log_prob_single = model._free_energy(
+            torch.tensor((sample_single + 1) / 2, requires_grad=False).unsqueeze(0)
+        ).item()
+        rbm_log_prob_rbm = model._free_energy(sample_rbm.unsqueeze(0)).item()
+
+        log_swap_ratio = (
+            boltz_log_prob_single
+            - boltz_log_prob_rbm
+            + rbm_log_prob_single
+            - rbm_log_prob_rbm
+        )
+
+        log_prob_swap = min(0.0, log_swap_ratio)
+
+        if verbose:
+            print(
+                f"{step+1:6d}  {accepted}  {eng_single/spins:2.4f}  {eng_rbm/spins:2.4f}  {boltz_log_prob_single:3.2f}  {boltz_log_prob_rbm:3.2f}  {rbm_log_prob_single:4.2f}  {rbm_log_prob_rbm:4.2f}  {log_prob_swap:2.4f}"
+            )
+
+        if log_prob_swap >= 0.0 or np.log(np.random.random_sample()) < log_prob_swap:
+            sample_rbm, sample_single = (
+                torch.tensor(sample_single + 1) / 2,
+                sample_rbm.detach().numpy() * 2 - 1,
+            )
+            eng_rbm, eng_single = eng_single, eng_rbm
+            swap += 1
+
+        pbar.set_postfix(
+            {
+                "eng-single": energies_single[-1] / spins,
+                "eng-rbm": energies_rbm[-1] / spins,
+            }
+        )
+
+    samples_single = np.asarray(samples_single).astype("int8")
+    energies_single = np.asarray(energies_single).astype(np.float)
+    samples_rbm = np.asarray(samples_rbm).astype("int8")
+    energies_rbm = np.asarray(energies_rbm).astype(np.float)
+    if save:
+        filename = f"{str(spins)}spins_beta{beta}_{math.ceil(steps/save_every)}rbm{path.parts[-4]}_{path.parts[-3]}-single-mcmc"
+        out = {
+            "sample": samples_single,
+            "energy": energies_single,
+        }
+        print("\nSaving MCMC output as {0}\n".format(filename))
+        np.savez(filename, **out)
+
+    print(f"\nBeta={beta}")
+    print(
+        f"MCMC: Step: {step + 1:6d} Accepted (single) {accepted / step * 100:2.2f} %  Energy per spin (avg): {energies_single.mean() / spins:2.4f} Energy per spin (std): {(energies_single / spins).std(ddof=1):2.4f}  Energy per spin (min): {energies_single.min() / spins}"
+    )
+    print(
+        f"Gibbs MCMC: Swap {swap} Energy per spin (avg): {energies_rbm.mean() / spins:2.4f} Energy per spin (std): {(energies_rbm / spins).std(ddof=1):2.4f}  Energy per spin (min): {energies_rbm.min() / spins}"
+    )
+    print(f"Duration {datetime.now() - start_time}\n")
+    return (samples_single, energies_single)
