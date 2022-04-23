@@ -375,7 +375,7 @@ def plot_hist(
         max_eng = max(max_eng, eng.max())
         engs.append(eng)
 
-    fig, ax = plt.subplots(figsize=(7.8, 7.8), dpi=128)
+    fig, ax = plt.subplots(figsize=(7.8, 7.8), dpi=128, facecolor="white")
 
     plt.rcParams["mathtext.fontset"] = "stix"
     plt.rcParams["font.family"] = "STIXGeneral"
@@ -484,7 +484,7 @@ def plot_hist(
             "images/hist.png",
             edgecolor="white",
             facecolor=fig.get_facecolor(),
-            transparent=True,
+            # transparent=True,
             bbox_inches="tight",
         )
 
