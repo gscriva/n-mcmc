@@ -712,8 +712,9 @@ def gibbs_rbm(
     # initialisation
     energies = []
     samples = []
+    hamming_dist_sum = 0
     # start with a random sample
-    accepted_sample = torch.bernoulli(torch.ones(spins, device=device) * 0.5) * 2 - 1
+    accepted_sample = torch.bernoulli(torch.ones(spins, device=device) * 0.5)
 
     disable = verbose + disable_bar
     # reduce correlation
@@ -722,6 +723,16 @@ def gibbs_rbm(
     for step in pbar:
         h = model._to_hidden(accepted_sample)
         sample, _ = model._to_visible(h)
+
+        # compute Hamming distance,
+        # i.e., how many spins are changed at each step
+        hamming_dist = (
+            np.abs(
+                accepted_sample.cpu().detach().numpy() - sample.cpu().detach().numpy()
+            ).sum()
+            / spins
+        )
+        hamming_dist_sum += hamming_dist
 
         accepted_sample = sample
         if step % save_every == 0:
@@ -742,6 +753,7 @@ def gibbs_rbm(
                 "err": np.asarray(energies).std()
                 / math.sqrt(len(energies))
                 / spins ** 2,
+                "hamming": hamming_dist_sum / (step + 1),
             }
         )
 
