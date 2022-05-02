@@ -95,7 +95,7 @@ def single_spin_flip(
                 f"{step:6d}  {eng_now / spins:2.4f}  {np.asarray(energies).mean():2.4f}  {np.asarray(energies).std(ddof=1):2.4f}"
             )
 
-    configs = (np.asarray(configs).astype("int8") + 1) / 2
+    configs = np.asarray(configs).astype("int8")
     energies = np.asarray(energies)
     if save:
         # Saves the configurations
