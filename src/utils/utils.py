@@ -424,7 +424,6 @@ def plot_hist(
     plt.xlabel(r"$E/N$", fontsize=30, fontfamily=stringfont)
 
     plt.ylim(1, min_len_sample * 0.5)
-    plt.xlim(-1.28, -0.3)
 
     bins = np.linspace(min_eng, max_eng).tolist()
 
