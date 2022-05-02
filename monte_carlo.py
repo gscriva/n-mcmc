@@ -41,7 +41,10 @@ parser_exchange_rbm = subparsers.add_parser(
 
 parser_single.add_argument("--type", type=str, default="single", help=argparse.SUPPRESS)
 parser_single.add_argument(
-    "--sweeps", type=int, default=0, help="Number of sweeps before save (default: 0)"
+    "--sweeps",
+    type=int,
+    default=0,
+    help="Number of attemps to flip each spin before save (default: 0)",
 )
 parser_single.add_argument(
     "--seed-startpoint",
@@ -100,7 +103,7 @@ parser_exchange_rbm.add_argument(
 )
 parser_exchange_rbm.add_argument("--path", type=Path, help="Path to the model")
 
-MAX_CPUS = 12
+MAX_CPUS = 20
 
 
 def main(args: argparse.ArgumentParser):
