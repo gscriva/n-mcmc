@@ -1,6 +1,6 @@
 import math
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, Optional, Tuple, Union
 
 import numpy as np
 import torch
@@ -99,7 +99,7 @@ def single_spin_flip(
     energies = np.asarray(energies)
     if save:
         # Saves the configurations
-        np.save(f"for_costa/{spins}spins-seed{seed}-sample{step+1}-beta{beta}", configs)
+        np.save(f"{spins}spins-seed{seed}-sample{step+1}-beta{beta}", configs)
 
     print(f"\nMCMC: Beta={beta} Seed={seed}")
     print(
