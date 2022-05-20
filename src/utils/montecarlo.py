@@ -208,6 +208,11 @@ def neural_mcmc(
 
         transition_prob.append(min(0.0, log_prob_ratio[idx]))
 
+        if verbose:
+            print(
+                f"{idx+1:6d}  neural  {accepted_eng/spins:2.4f}  {trial_eng/spins:2.4f}  {accepted_log_prob:3.2f}  {trial_log_prob:3.2f}  {accepted_boltz_log_prob:4.2f}  {trial_boltz_log_prob:4.2f}  {transition_prob[idx]:2.4f}"
+            )
+
         if transition_prob[idx] >= 0.0 or (
             np.log(np.random.random_sample()) < transition_prob[idx]
         ):
@@ -548,7 +553,7 @@ def seq_hybrid_mcmc(
 
     start_time = datetime.now()
     # set a limit to prevent memory/timeout errors
-    MAX_STEPS = 1e9
+    MAX_STEPS = 1e10
     # increase steps to avoid correlation
     steps *= save_every
     # load data generate by the NN
@@ -557,11 +562,13 @@ def seq_hybrid_mcmc(
         path, model, math.ceil(steps / len_seq_single) + 1, batch_size, verbose
     )
 
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+
     # load the model
     if model_path is not None:
-        model = Made.load_from_checkpoint(model_path)
+        model = Made.load_from_checkpoint(model_path).to(device)
     else:
-        model = Made.load_from_checkpoint(path)
+        model = Made.load_from_checkpoint(path).to(device)
 
     # get the dimension of the sample from the data
     spin_side = proposals[0].shape[-1]
@@ -613,8 +620,11 @@ def seq_hybrid_mcmc(
             # via the trained model
             # model accepts input in {0,1}
             accepted_log_prob = (
-                model.forward(torch.from_numpy((accepted_sample + 1) / 2).float())
+                model.forward(
+                    torch.from_numpy((accepted_sample + 1) / 2).float().to(device)
+                )
                 .detach()
+                .cpu()
                 .numpy()
             )
             if not np.isfinite(trial_log_prob):
@@ -700,9 +710,10 @@ def seq_hybrid_mcmc(
         pbar.update()
         pbar.set_description(f"eng: {accepted_eng / spins:2.5f}", refresh=False)
 
-        # save acceped sample and its energy
-        samples.append(accepted_sample)
-        energies.append(accepted_eng)
+        if step % save_every == 0:
+            # save acceped sample and its energy
+            samples.append(accepted_sample)
+            energies.append(accepted_eng)
 
         if verbose:
             if neural:
@@ -717,8 +728,8 @@ def seq_hybrid_mcmc(
             print("Steps limit")
             break
 
-    samples = np.asarray(samples).astype("int8")[::save_every, ...]
-    energies = np.asarray(energies).astype(np.double)[::save_every]
+    samples = np.asarray(samples).astype(np.int8)
+    energies = np.asarray(energies).astype(np.double)
     avg_eng = energies.mean()
     err_eng = energies.std(ddof=1) / math.sqrt(energies.shape[0])
     if save:
@@ -737,7 +748,7 @@ def seq_hybrid_mcmc(
         f"Accepted proposals (single spin flip): {accepted_single} on {steps_single} (A_r={accepted_single / (steps_single + np.finfo(float).eps) * 100:2.2f}%)"
     )
     print(
-        f"Steps: {step + 1:6d}  A_r={accepted / steps * 100:2.2f}%  E={avg_eng / spins:2.6f} \u00B1 {err_eng / spins:2.6f}  [\u03C3={energies.std(ddof=1) / spins:2.6f}  E_min={energies.min() / spins:2.6f}]"
+        f"Steps: {step + 2:6d}  A_r={accepted / steps * 100:2.2f}%  E={avg_eng / spins:2.6f} \u00B1 {err_eng / spins:2.6f}  [\u03C3={energies.std(ddof=1) / spins:2.6f}  E_min={energies.min() / spins:2.6f}]"
     )
     print(f"Accepted Neural after Single {neural_after_single}")
     print(f"Duration {datetime.now() - start_time}\n")
