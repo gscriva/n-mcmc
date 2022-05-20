@@ -439,7 +439,7 @@ def plot_hist(
             density=density,
         )
         print(
-            f"\n{labels[i]}\nmean: {eng.mean()}\nmin: {eng.min()} ({np.sum(eng==eng.min())} occurance(s))                                                                    (s))"
+            f"\n{labels[i]}\nE: {eng.mean()} \u00B1 {eng.std(ddof=1) / math.sqrt(eng.shape[0])}\nmin: {eng.min()} ({np.sum(eng==eng.min())} occurance(s))                                                                    (s))"
         )
     _ = plt.hist(
         eng_truth[:min_len_sample],
@@ -469,7 +469,7 @@ def plot_hist(
         )
 
     print(
-        f"\n{labels[i+1]} eng\nmean: {eng_truth.mean()}\nmin: {eng_truth.min()}  ({np.sum(eng_truth==eng_truth.min())} occurance(s))"
+        f"\n{labels[i+1]} eng\nE: {eng_truth.mean()} \u00B1 {eng_truth.std(ddof=1) / math.sqrt(eng_truth.shape[0])}\nmin: {eng_truth.min()}  ({np.sum(eng_truth==eng_truth.min())} occurance(s))"
     )
 
     plt.ylim(1, min_len_sample * 0.5)
@@ -564,7 +564,6 @@ def get_energy(
         try:
             sample = out["sample"]
         except:
-            print(f"No sample subdir found in {path} \nLoading from path...")
             sample = out
 
         sample = sample.squeeze()
