@@ -27,7 +27,6 @@ parser.add_argument(
 parser.add_argument(
     "--save", dest="save", action="store_true", help="Save the samples after MCMC"
 )
-parser.add_argument("--save-every", type=int, help="Number of steps to save", default=1)
 
 parser_single = subparsers.add_parser(
     "single", help="Single Spin Flip Monte Carlo Simulation"
@@ -56,7 +55,7 @@ parser_single.add_argument(
 
 parser_neural.add_argument("--type", type=str, default="neural", help=argparse.SUPPRESS)
 parser_neural.add_argument(
-    "--path", type=Path, help="Path to the model or to the generated sample"
+    "--path", type=str, help="Path to the model or to the generated sample"
 )
 parser_neural.add_argument(
     "--model", type=str, choices=["made", "pixel", "rbm"], help="Model to use"
@@ -64,10 +63,14 @@ parser_neural.add_argument(
 parser_neural.add_argument(
     "--batch-size", type=int, default=20000, help="Size of each batch (default: 20000)"
 )
+parser_neural.add_argument(
+    "--save-every", type=int, help="Number of steps to save", default=1
+)
+
 
 parser_hybrid.add_argument("--type", type=str, default="hybrid", help=argparse.SUPPRESS)
 parser_hybrid.add_argument(
-    "--path", type=Path, help="Path to the model or to the generated sample"
+    "--path", type=str, help="Path to the model or to the generated sample"
 )
 parser_hybrid.add_argument(
     "--model", type=str, choices=["made", "pixel", "rbm"], help="Model to use"
@@ -87,21 +90,32 @@ parser_hybrid.add_argument(
     default=0.5,
     help="Probability of single spin flip step (default: 0.5)",
 )
-
 parser_hybrid.add_argument(
     "--len-seq-single",
     type=int,
     default=None,
-    help="Lenght of single spin flip consecutive steps (default: None)",
+    help="Lenght of single spin flip consecutive steps. If given it enables the sequential hybrid algorithm (default: None)",
 )
+parser_hybrid.add_argument(
+    "--save-every", type=int, help="Number of steps to save", default=1
+)
+
 
 parser_gibbs.add_argument("--type", type=str, default="gibbs", help=argparse.SUPPRESS)
 parser_gibbs.add_argument("--path", type=Path, help="Path to the model")
+parser_gibbs.add_argument(
+    "--save-every", type=int, help="Number of steps to save", default=1
+)
+
 
 parser_exchange_rbm.add_argument(
     "--type", type=str, default="exchange-rbm", help=argparse.SUPPRESS
 )
 parser_exchange_rbm.add_argument("--path", type=Path, help="Path to the model")
+parser_exchange_rbm.add_argument(
+    "--save-every", type=int, help="Number of steps to save", default=1
+)
+
 
 MAX_CPUS = 20
 
