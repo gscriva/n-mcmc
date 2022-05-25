@@ -1,5 +1,7 @@
+from cmath import exp
 import math
 from datetime import datetime
+from pathlib import Path
 from typing import Dict, Optional, Tuple, Union
 
 import numpy as np
@@ -23,10 +25,12 @@ def single_spin_flip(
     steps: int,
     couplings_path: str,
     sweeps: int = 0,
+    burnt: int = 0,
     seed: int = 42,
     verbose: bool = False,
     disable_bar: bool = False,
     save: bool = False,
+    save_dir: Optional[str] = None,
 ) -> Tuple[np.ndarray, np.ndarray]:
     """The Single Spin Flip algorithm exploit a Markov Chain to explore the energy landscape
      of a given hamiltonian at a specified temperature.
@@ -37,16 +41,23 @@ def single_spin_flip(
         steps (int): Steps of the Monte Carlo simulation.
         couplings_path (str): Path to the couplings, they define a Hamiltonian.
         sweeps (int, optional): Number of attemps to flip each spin before save. Defaults to 0.
+        burnt (int, optional): Number of steps to skip before starting to save. Default to 0.
         seed (int, optional): Seed to sample the starting point configuration. Defaults to 42.
         verbose (bool, optional): Set verbose prints. Defaults to False.
         disable_bar (bool, optional): Set true to disable the bar. Defaults to False.
         save (bool, optional): Save the samples after MCMC. Defaults to False.
+        save_dir (str, optional): Number of steps to skip before starting to save. Default to None.
 
     Returns:
         Tuple[np.ndarray, np.ndarray]: Sample and their energy.
     """
     print(f"\nStart MCMC simulation\nbeta={beta} seed={seed}")
     start_time = datetime.now()
+
+    if save_dir is not None:
+        if not Path(save_dir).is_dir():
+            print(f"'{save_dir}' not found")
+            raise FileNotFoundError
 
     # get neighbourhood matrix
     spin_side = int(math.sqrt(spins))
@@ -65,7 +76,7 @@ def single_spin_flip(
 
     # disable bar in parallel processing too
     disable = disable_bar + verbose
-    pbar = tqdm(range(steps), disable=disable)
+    pbar = tqdm(range(steps + burnt), disable=disable)
     # use sweeps to reduce correlation
     skip_steps = 1 if sweeps == 0 else sweeps * spins
     for step in pbar:
@@ -86,9 +97,11 @@ def single_spin_flip(
 
         pbar.set_description(f"eng: {eng_now / spins:2.5f}", refresh=False)
 
-        # save energies and step
-        energies.append(eng_now)
-        configs.append(sample.copy())
+        # do not save first N_burnt steps
+        if step > burnt:
+            # save energies and step
+            energies.append(eng_now)
+            configs.append(sample.copy())
 
         if verbose and step > 1:
             print(
@@ -98,8 +111,15 @@ def single_spin_flip(
     configs = np.asarray(configs).astype("int8")
     energies = np.asarray(energies)
     if save:
+        file = f"{spins}spins-seed{seed}-sample{step+1}-sweeps{sweeps}-beta{beta}.npy"
+        print(file)
+        # add parent directory
+        if save_dir is not None:
+            file = save_dir + file
+            print(file)
         # Saves the configurations
-        np.save(f"{spins}spins-seed{seed}-sample{step+1}-beta{beta}", configs)
+        np.save(file, configs)
+        print(f"Saved in {file}")
 
     print(f"\nMCMC: Beta={beta} Seed={seed}")
     print(

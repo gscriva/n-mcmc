@@ -27,6 +27,18 @@ parser.add_argument(
 parser.add_argument(
     "--save", dest="save", action="store_true", help="Save the samples after MCMC"
 )
+parser.add_argument(
+    "--save-dir",
+    type=str,
+    default=None,
+    help="Number of steps to skip before starting to save (default: 0)",
+)
+parser.add_argument(
+    "--burnt",
+    type=int,
+    default=0,
+    help="Number of steps to skip before starting to save (default: 0)",
+)
 
 parser_single = subparsers.add_parser(
     "single", help="Single Spin Flip Monte Carlo Simulation"
@@ -117,7 +129,7 @@ parser_exchange_rbm.add_argument(
 )
 
 
-MAX_CPUS = 20
+MAX_CPUS = 32
 
 
 def main(args: argparse.ArgumentParser):
@@ -140,10 +152,12 @@ def main(args: argparse.ArgumentParser):
                         args.steps,
                         args.couplings_path,
                         args.sweeps,
+                        args.burnt,
                         seed,
                         args.verbose,
                         disable_bar,
                         args.save,
+                        args.save_dir,
                     ),
                 )
         pool.close()
