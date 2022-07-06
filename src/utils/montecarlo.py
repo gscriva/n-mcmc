@@ -51,8 +51,8 @@ def single_spin_flip(
     Returns:
         Tuple[np.ndarray, np.ndarray]: Sample and their energy.
     """
-    print(f"\nStart MCMC simulation\nbeta={beta} seed={seed}")
     start_time = datetime.now()
+    print(f"\nStart MCMC simulation {start_time}\nbeta={beta} seed={seed}")
 
     if save_dir is not None:
         if not Path(save_dir).is_dir():
@@ -65,7 +65,7 @@ def single_spin_flip(
 
     # initialize starting point
     np.random.seed(seed)
-    sample = np.random.randint(0, 2, size=(spins)) * 2.0 - 1.0
+    sample = 2 * np.random.randint(2, size=(spins)) - 1.0
 
     # initialize energy and config list
     configs = []
@@ -98,14 +98,14 @@ def single_spin_flip(
         pbar.set_description(f"eng: {eng_now / spins:2.5f}", refresh=False)
 
         # do not save first N_burnt steps
-        if step > burnt:
+        if step > burnt - 1:
             # save energies and step
             energies.append(eng_now)
             configs.append(sample.copy())
 
         if verbose and step > 1:
             print(
-                f"{step:6d}  {eng_now / spins:2.4f}  {np.asarray(energies).mean():2.4f}  {np.asarray(energies).std(ddof=1):2.4f}"
+                f"{step-1:6d}  {eng_now / spins:2.4f}  {np.asarray(energies).mean():2.4f}  {np.asarray(energies).std(ddof=1):2.4f}"
             )
 
     configs = np.asarray(configs).astype("int8")
