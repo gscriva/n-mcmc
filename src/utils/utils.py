@@ -1,10 +1,8 @@
 import logging
-import math
 import os
 import warnings
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pytorch_lightning as pl
 import rich.syntax
@@ -313,189 +311,44 @@ def compute_boltz_prob(eng: float, beta: float, num_spin: int) -> float:
     return -beta * eng
 
 
-def plot_hist(
-    paths: List[str],
-    couplings_path: str,
-    truth_path: str = "/home/scriva/pixel-cnn/data/100-v1/train_100_lattice_2d_ising_spins.npy",
-    ground_state: Optional[float] = None,
-    colors: Optional[List[str]] = None,
-    labels: Optional[List[str]] = None,
-    density: Optional[bool] = False,
-    save: bool = False,
-) -> Tuple[List[np.ndarray], List[np.ndarray]]:
-    if labels is None:
-        labels = [f"Dataset {i}" for i, _ in enumerate(paths)]
-        labels.append("Truth")
-    if colors is None:
-        colors = [None for _ in paths]
-
-    assert len(labels) - 1 == len(colors) == len(paths)
-
-    truth = np.load(truth_path)
-    try:
-        truth = truth["sample"]
-    except:
-        truth = truth
-
-    min_len_sample = truth.shape[0]
-    truth = np.reshape(truth, (min_len_sample, -1))
-    spins = truth.shape[-1]
-
-    # laod couplings
-    # TODO Adjancecy should wotk with spins, not spin side
-    neighbours, couplings, len_neighbours = get_couplings(
-        int(math.sqrt(spins)), couplings_path
-    )
-
-    eng_truth = []
-    for t in truth:
-        eng_truth.append(compute_energy(t, neighbours, couplings, len_neighbours))
-    eng_truth = np.asarray(eng_truth) / spins
-
-    min_eng, max_eng = eng_truth.min(), eng_truth.max()
-
-    engs = []
-    for path in paths:
-        data = np.load(path)
-        try:
-            sample = data["sample"]
-        except:
-            sample = data
-
-        sample = sample.squeeze()
-        min_len_sample = min(min_len_sample, sample.shape[0])
-        sample = np.reshape(sample, (-1, spins))
-
-        eng = []
-        for s in sample:
-            eng.append(compute_energy(s, neighbours, couplings, len_neighbours))
-        eng = np.asarray(eng) / spins
-
-        min_eng = min(min_eng, eng.min())
-        max_eng = max(max_eng, eng.max())
-        engs.append(eng)
-
-    fig, ax = plt.subplots(figsize=(7.8, 7.8), dpi=128, facecolor="white")
-
-    plt.rcParams["mathtext.fontset"] = "stix"
-    plt.rcParams["font.family"] = "STIXGeneral"
-    plt.rcParams["axes.linewidth"] = 2.5
-
-    stringfont = "serif"
-
-    ax.tick_params(
-        axis="y",
-        top=True,
-        right=True,
-        labeltop=False,
-        labelright=False,
-        width=2.5,
-        length=8,
-        direction="in",
-        labelsize=18,
-    )
-    ax.tick_params(
-        axis="y",
-        which="minor",
-        top=True,
-        right=True,
-        labeltop=False,
-        labelright=False,
-        width=2.5,
-        length=4,
-        direction="in",
-        labelsize=18,
-    )
-    ax.tick_params(
-        axis="x",
-        top=True,
-        right=True,
-        labeltop=False,
-        labelright=False,
-        width=2.5,
-        length=8,
-        direction="in",
-        labelsize=18,
-    )
-
-    ax.set_yscale("log")
-
-    plt.ylabel("Count", fontsize=30, fontfamily=stringfont)
-    plt.xlabel(r"$E/N$", fontsize=30, fontfamily=stringfont)
-
-    plt.ylim(1, min_len_sample * 0.5)
-
-    bins = np.linspace(min_eng, max_eng).tolist()
-
-    for i, eng in enumerate(engs):
-        _ = plt.hist(
-            eng[:min_len_sample],
-            bins=bins,
-            # log=True,
-            label=f"{labels[i]}",
-            histtype="bar",
-            alpha=0.9 - i * 0.1,
-            color=colors[i],
-            density=density,
-        )
-        print(
-            f"\n{labels[i]}\nE: {eng.mean()} \u00B1 {eng.std(ddof=1) / math.sqrt(eng.shape[0])}\nmin: {eng.min()} ({np.sum(eng==eng.min())} occurance(s))                                                                    (s))"
-        )
-    _ = plt.hist(
-        eng_truth[:min_len_sample],
-        bins=bins,
-        # log=True,
-        label=f"{labels[i+1]}",
-        histtype="bar",
-        edgecolor="k",
-        color=["lightgrey"],
-        alpha=0.5,
-        density=density,
-    )
-
-    if density:
-        min_len_sample = 200
-
-    if ground_state is not None:
-        plt.vlines(
-            ground_state,
-            1,
-            min_len_sample * 0.5,
-            linewidth=4.0,
-            colors="red",
-            linestyles="dashed",
-            alpha=0.7,
-            label="Ground State",
-        )
-
-    print(
-        f"\n{labels[i+1]} eng\nE: {eng_truth.mean()} \u00B1 {eng_truth.std(ddof=1) / math.sqrt(eng_truth.shape[0])}\nmin: {eng_truth.min()}  ({np.sum(eng_truth==eng_truth.min())} occurance(s))"
-    )
-
-    plt.ylim(1, min_len_sample * 0.5)
-
-    plt.legend(
-        loc="upper right", labelspacing=0.4, fontsize=22, borderpad=0.2, fancybox=True
-    )
-
-    if save:
-        plt.savefig(
-            "images/hist.png",
-            edgecolor="white",
-            facecolor=fig.get_facecolor(),
-            # transparent=True,
-            bbox_inches="tight",
-        )
-
-    return engs, eng_truth
-
-
-def block_std(engs: List[np.ndarray], len_block: int, skip: int = 0) -> float:
+def block_single_std(engs: np.ndarray, len_block: int, skip: int = 0) -> float:
     """Compute the block std of a list of arrays.
     See http://chimera.roma1.infn.it/SP/doc/estratti/dataAnalysis.pdf
 
     Args:
-        engs (List[np.ndarray]): List of energies arrays.
+        engs (np.ndarray): List of energies arrays or array.
+        len_block (int): Block lenght to compute std.
+        skip (int, optional): Number of initial sample to skip. Defaults to 0.
+
+    Returns:
+        float: Block std.
+    """
+    std_engs = []
+    for i in range(engs.shape[0]):
+        eng_seed = engs[i]
+        error = []
+        for eng in eng_seed:
+            if isinstance(eng, list):
+                eng = np.asarray(eng)
+            eng = eng[skip:].copy()
+            rest_len = eng.size % len_block
+            if rest_len != 0:
+                eng = eng[:-rest_len]
+            eng = eng.reshape(-1, len_block)
+            new_len = eng.shape[0]
+            # if new_len < 100:
+            #    print(f"WARNING: New Len={new_len} < 100")
+            error.append(np.std(eng.mean(axis=1), ddof=0) / np.sqrt(new_len - 1))
+        std_engs.append(error)
+    return std_engs
+
+
+def block_std(engs: List[Any], len_block: int, skip: int = 0) -> float:
+    """Compute the block std of a list of arrays.
+    See http://chimera.roma1.infn.it/SP/doc/estratti/dataAnalysis.pdf
+
+    Args:
+        engs (List[Any]): List of energies arrays.
         len_block (int): Block lenght to compute std.
         skip (int, optional): Number of initial sample to skip. Defaults to 0.
 
@@ -512,6 +365,8 @@ def block_std(engs: List[np.ndarray], len_block: int, skip: int = 0) -> float:
             eng = eng[:-rest_len]
         eng = eng.reshape(-1, len_block)
         new_len = eng.shape[0]
+        if new_len < 100:
+            print(f"WARNING: New Len {new_len} < 100")
         error = np.std(eng.mean(axis=1), ddof=0) / np.sqrt(new_len - 1)
         std_engs.append(error)
     return std_engs
