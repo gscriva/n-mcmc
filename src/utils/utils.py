@@ -366,7 +366,7 @@ def block_std(engs: List[Any], len_block: int, skip: int = 0) -> float:
         eng = eng.reshape(-1, len_block)
         new_len = eng.shape[0]
         if new_len < 100:
-            print(f"WARNING: New Len {new_len} < 100")
+            pass  # print(f"WARNING: New Len {new_len} < 100")
         error = np.std(eng.mean(axis=1), ddof=0) / np.sqrt(new_len - 1)
         std_engs.append(error)
     return std_engs
