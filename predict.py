@@ -7,20 +7,13 @@ from src.generate import generate
 parser = argparse.ArgumentParser()
 parser.add_argument("--ckpt-path", type=Path, help="Path to the checkpoint")
 parser.add_argument(
-    "--model", type=str, choices=["made", "pixel", "rbm"], help="Model to use"
+    "--model", type=str, choices=["made", "pixel"], help="Model to use"
 )
 parser.add_argument(
     "--num-sample",
     type=int,
     default=1,
     help="Number of sample to generate (default: 1)",
-)
-
-parser.add_argument(
-    "--k-steps",
-    type=int,
-    default=1,
-    help="Number of Gibbs steps to generate, only for RBM (default: 1)",
 )
 
 parser.add_argument(
@@ -55,7 +48,6 @@ def main(args: argparse.ArgumentParser):
         args.ckpt_path,
         args.model,
         args.num_sample,
-        args.k_steps,
         args.batch_size,
         args.num_workers,
         args.save_sample,

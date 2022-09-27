@@ -6,14 +6,12 @@ from torch.utils.data import DataLoader
 from src.datamodules.ising_datamodule import worker_init_fn
 from src.models.made import Made
 from src.models.pixel_cnn import PixelCNN
-from src.models.rbm import RBM
 
 
 def generate(
     ckpt_path: str,
     model: str,
     num_sample: str = 1,
-    k_steps: int = 1,
     batch_size: int = 20000,
     num_workers: int = 1,
     save_sample: bool = False,
@@ -25,10 +23,6 @@ def generate(
         shape = (num_sample, 1, model.hparams.input_size, model.hparams.input_size)
     elif model == "made":
         model = Made.load_from_checkpoint(ckpt_path)
-        shape = (num_sample, model.hparams.input_size)
-    else:
-        model = RBM.load_from_checkpoint(ckpt_path)
-        model.hparams["k"] = k_steps
         shape = (num_sample, model.hparams.input_size)
 
     if verbose:

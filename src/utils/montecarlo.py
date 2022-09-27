@@ -9,7 +9,6 @@ import torch
 from tqdm import tqdm
 
 from src.models.made import Made
-from src.models.rbm import RBM
 from src.utils.utils import (
     compute_boltz_prob,
     compute_delta_h,
