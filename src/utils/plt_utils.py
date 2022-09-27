@@ -8,47 +8,66 @@ from src.utils.utils import block_single_std, compute_energy, get_couplings
 
 
 def plt_betas_ar(
-    acc_rates: List[np.ndarray],
+    ax,
+    acc_rates: List[List[float]],
     labels: List[str],
     betas: np.ndarray,
     xlim: Optional[Tuple[float, float]] = None,
+    ylim: Optional[Tuple[float, float]] = None,
+    line_style: Optional[List[str]] = None,
+    color: Optional[List[str]] = None,
     save: bool = False,
 ):
-    fig, ax = plt.subplots()  # figsize=(7.2, 6.4), dpi=300
+    # fig, ax = plt.subplots()  # figsize=(7.2, 6.4), dpi=300
 
-    plt.minorticks_off()
+    ax.minorticks_off()
+
+    if line_style is None:
+        line_style = ["--"] * len(acc_rates)
+    if color is None:
+        color = [None] * len(acc_rates)
+    assert len(line_style) == len(acc_rates) == len(color)
 
     for i, acc_rate in enumerate(acc_rates):
-        plt.plot(betas, acc_rate, "--", label=labels[i])
+        ax.plot(
+            betas,
+            acc_rate,
+            line_style[i],
+            color=color[i],
+            markersize=6,
+            label=labels[i],
+        )
 
     if xlim is not None:
-        plt.xlim(xlim)
+        ax.set_xlim(xlim)
+    if ylim is not None:
+        ax.set_ylim(ylim)
 
-    plt.ylabel(r"$\mathrm{A_r}[\%]$")
-    plt.xlabel(r"$\mathrm{\beta}$", fontweight="bold")
+    ax.set_ylabel(r"$\mathrm{A_r}[\%]$")
+    ax.set_xlabel(r"$\mathrm{\beta}$")
 
-    plt.legend(loc="best", fancybox=True)
+    ax.legend(loc="best", fancybox=True, framealpha=0.8)
 
     if save:
         plt.savefig(
             "images/arbeta.png",
             edgecolor="white",
-            facecolor=fig.get_facecolor(),
+            facecolor=ax.get_facecolor(),
             bbox_inches="tight",
         )
         plt.savefig(
             "images/arbeta.eps",
             edgecolor="white",
-            facecolor=fig.get_facecolor(),
+            facecolor=ax.get_facecolor(),
             # transparent=True,
             bbox_inches="tight",
             format="eps",
         )
-    plt.show()
     return
 
 
 def plt_eng_step(
+    ax,
     eng1: np.ndarray,
     eng2: np.ndarray,
     label1: str,
@@ -60,31 +79,31 @@ def plt_eng_step(
     log_scale: bool = True,
     save: bool = False,
 ):
-    fig, ax = plt.subplots()
+    # fig, ax = plt.subplots()
 
     if len(eng1.shape) > 1:
-        plt.fill_between(
+        ax.fill_between(
             np.arange(eng1.shape[-1]) + 1,
             eng1.mean(axis=0) + eng1.std(axis=0),
             eng1.mean(axis=0) - eng1.std(axis=0),
             alpha=0.1,
             color="b",
         )
-        plt.plot(
+        ax.plot(
             np.arange(eng1.shape[-1]) + 1, eng1.mean(axis=0), label=label1, color="b"
         )
     else:
-        plt.plot(np.arange(eng1.shape[-1]) + 1, eng1, label=label1, color="b")
+        ax.plot(np.arange(eng1.shape[-1]) + 1, eng1, label=label1, color="b")
 
     if len(eng2.shape) > 1:
-        plt.fill_between(
+        ax.fill_between(
             np.arange(eng2.shape[-1] + 1),
             eng2.mean(axis=0) + eng2.std(axis=0),
             eng2.mean(axis=0) - eng2.std(axis=0),
             alpha=0.1,
             color="tab:orange",
         )
-        plt.plot(
+        ax.plot(
             np.arange(eng2.shape[-1]) + 1,
             eng2.mean(0),
             "--",
@@ -94,7 +113,7 @@ def plt_eng_step(
             linewidth=1.0,
         )
     else:
-        plt.plot(
+        ax.plot(
             np.arange(eng2.shape[-1]) + 1,
             eng2,
             "--",
@@ -108,48 +127,49 @@ def plt_eng_step(
         ax.set_xscale("log")
 
     if ground_state is not None:
-        plt.hlines(
+        ax.hlines(
             ground_state,
             xmin=0,
             xmax=xlim[1] + 100000,
             colors="red",
             linestyles="dashed",
-            label="Ground State",
+            label="GS",
             linewidth=3.0,
         )
         if ylim is None:
             ylim = (ground_state - 0.01, max(eng1.max(), eng2.max()))
-            plt.ylim(ylim)
+            ax.set_ylim(ylim)
         else:
-            plt.ylim(ylim)
+            ax.set_ylim(ylim)
 
-    plt.xlim(xlim)
+    ax.set_xlim(xlim)
 
-    plt.ylabel(r"$E/N$", fontfamily="serif")
-    plt.xlabel(r"$\mathrm{\tau}$")
+    ax.set_ylabel(r"$E/N$")
+    ax.set_xlabel(r"$\mathrm{\tau}$")
 
     if title is not None:
-        plt.title(rf"{title}", fontsize=20)
+        ax.set_title(rf"{title}")
 
-    plt.legend(loc="best", fontsize=18, labelspacing=0.4, borderpad=0.2, fancybox=True)
+    ax.legend(
+        loc="best"
+    )  # , fontsize=18, labelspacing=0.4, borderpad=0.2, fancybox=True)
 
     if save:
         # TOFIX
         # ERROR: when saving .png
         plt.savefig(
             "images/energy-steps.png",
-            facecolor=fig.get_facecolor(),
+            facecolor=ax.get_facecolor(),
             bbox_inches="tight",
             transparent=False,
         )
         plt.savefig(
             "images/energy-steps.eps",
-            facecolor=fig.get_facecolor(),
+            facecolor=ax.get_facecolor(),
             # transparent=True,
             bbox_inches="tight",
             format="eps",
         )
-    plt.show()
     return
 
 
@@ -171,7 +191,8 @@ def plt_acf(
     def stretch_exp(t, a, tau, alpha):
         return a * np.exp(-((t / tau) ** alpha))
 
-    fig, ax = plt.subplots()
+    # HARDCODED: set correct figsize
+    fig, ax = plt.subplots(figsize=(6.8, 6))
 
     # HARDCODE: to change if we have
     # more than 3 acs
@@ -233,10 +254,9 @@ def plt_acf(
         plt.savefig("images/correlation.png", facecolor=fig.get_facecolor())
         plt.savefig("images/correlation.eps", format="eps")
 
-    plt.show()
-
 
 def plot_hist(
+    ax,
     paths: List[str],
     couplings_path: str,
     truth_path: str,
@@ -249,6 +269,7 @@ def plot_hist(
     ticklables: Optional[Sequence[float]] = None,
     num_bins: int = 50,
     save: bool = False,
+    order: str = "C",
 ) -> None:
 
     import matplotlib.ticker as ticker
@@ -268,7 +289,7 @@ def plot_hist(
         truth = truth
 
     min_len_sample = truth.shape[0]
-    truth = np.reshape(truth, (min_len_sample, -1))
+    truth = np.reshape(truth, (min_len_sample, -1), order=order)
     spins = truth.shape[-1]
 
     # laod couplings
@@ -295,7 +316,7 @@ def plot_hist(
 
             sample = sample.squeeze()
             min_len_sample = min(min_len_sample, sample.shape[0])
-            sample = np.reshape(sample, (-1, spins))
+            sample = np.reshape(sample, (-1, spins), order=order)
 
             eng = []
             for s in sample:
@@ -308,19 +329,19 @@ def plot_hist(
         max_eng = max(max_eng, eng.max())
         engs.append(eng)
 
-    fig, ax = plt.subplots(figsize=(7.8, 7.8))
+    # fig, ax = plt.subplots(figsize=(7.8, 7.8))
 
     ax.set_yscale("log")
 
-    plt.ylabel("Count", fontweight="normal")
-    plt.xlabel(r"$E/N$")
+    ax.set_ylabel("Count")
+    ax.set_xlabel(r"$E/N$")
 
-    plt.ylim(1, min_len_sample * 0.5)
+    ax.set_ylim(1, min_len_sample * 0.5)
 
     bins = np.linspace(min_eng, max_eng, num=num_bins).tolist()
 
     for i, eng in enumerate(engs):
-        _ = plt.hist(
+        _ = ax.hist(
             eng[:min_len_sample],
             bins=bins,
             label=f"{labels[i]}",
@@ -334,7 +355,7 @@ def plot_hist(
         print(
             f"\n{labels[i]}\nE: {eng.mean()} \u00B1 {eng.std(ddof=1) / math.sqrt(eng.shape[0])}\nmin: {eng.min()} ({np.sum(eng==eng.min())} occurance(s))                                                                    (s))"
         )
-    _ = plt.hist(
+    _ = ax.hist(
         eng_truth[:min_len_sample],
         bins=bins,
         # log=True,
@@ -350,7 +371,7 @@ def plot_hist(
         min_len_sample = 200
 
     if ground_state is not None:
-        plt.vlines(
+        ax.vlines(
             ground_state,
             1,
             min_len_sample * 0.5,
@@ -358,30 +379,30 @@ def plot_hist(
             colors="red",
             linestyles="dashed",
             alpha=0.7,
-            label="Ground State",
+            label="GS",
         )
 
     print(
         f"\n{labels[i+1]} eng\nE: {eng_truth.mean()} \u00B1 {eng_truth.std(ddof=1) / math.sqrt(eng_truth.shape[0])}\nmin: {eng_truth.min()}  ({np.sum(eng_truth==eng_truth.min())} occurance(s))"
     )
 
-    plt.ylim(1, min_len_sample * 0.5)
+    ax.set_ylim(1, min_len_sample * 0.5)
     if ylim is not None:
-        plt.ylim(ylim)
+        ax.set_ylim(ylim)
     if xlim is not None:
-        plt.xlim(xlim)
+        ax.set_xlim(xlim)
     if ticklables is not None:
-        ax.tick_params(axis="x", which="minor", bottom=False)
-        plt.locator_params(axis="x", nbins=len(ticklables))
+        ax.tick_params(axis="x", which="minor", bottom=True)
+        ax.locator_params(axis="x", nbins=len(ticklables))
         ax.set_xticklabels(ticklables)
 
-    plt.legend(loc="upper right")
+    ax.legend(loc="upper right")
 
     if save:
         plt.savefig("images/hist.png")
         plt.savefig("images/hist.eps", format="eps")
 
-    return
+    return ax
 
 
 def get_errorbar(energies: np.ndarray, len_block: int, skip: int) -> np.ndarray:
@@ -407,17 +428,19 @@ def get_errorbar(energies: np.ndarray, len_block: int, skip: int) -> np.ndarray:
 
 
 def plt_eng_chains(
-    engs: List[np.ndarray],
+    ax,
+    engs: np.ndarray,
     strengths: np.ndarray,
     ground_state: float,
     dwave_default: float,
-    title: str,
+    title: Optional[str],
     xlim: Tuple[float, float] = (0.4, 4.1),
+    legend: bool = True,
     save: bool = False,
 ) -> None:
 
-    plt.plot(strengths, engs.min(1) / 484, "-s", label=r"Minimum", linewidth=1.0)
-    plt.errorbar(
+    ax.plot(strengths, engs.min(1) / 484, "-s", label=r"Minimum", linewidth=1.0)
+    ax.errorbar(
         strengths,
         engs.mean(1) / 484,
         engs.std(1) / 484,
@@ -432,25 +455,26 @@ def plt_eng_chains(
         label=r"Mean",
     )
 
-    plt.hlines(
+    ax.hlines(
         ground_state,
         xmin=xlim[0] - 0.4,
         xmax=xlim[1] + 0.4,
         colors="red",
         linestyles="dashed",
-        label="Ground State",
+        label="GS",
         linewidth=3,
     )
 
     if dwave_default is not None and title is not None:
-        plt.plot(
+        ax.plot(
             dwave_default,
             np.load(f"data/sweep_chains_{title.lower()}/dwave-engs_0.npy").min() / 484,
             "d",
+            markersize=10,
             color="tab:green",
             label=f"D-Wave default",
         )
-        plt.errorbar(
+        ax.errorbar(
             dwave_default,
             np.load(f"data/sweep_chains_{title.lower()}/dwave-engs_0.npy").mean() / 484,
             np.load(f"data/sweep_chains_{title.lower()}/dwave-engs_0.npy").std() / 484,
@@ -460,23 +484,24 @@ def plt_eng_chains(
             marker="d",
             color="tab:green",
             fillstyle="none",
-            markersize=8,
+            markersize=10,
             markeredgewidth=2,
             label=f"D-Wave default",
         )
 
-    plt.minorticks_off()
-    plt.xlim(xlim)
+    ax.minorticks_off()
+    ax.set_xlim(xlim)
 
-    plt.ylabel(r"$\mathrm{E}$")
-    plt.xlabel(r"chains_strength", fontsize=24, fontweight="ultralight")
+    ax.set_ylabel(r"$\mathrm{E}$")
+    ax.set_xlabel(r"chains_strength")
 
-    plt.title(f"{title} couplings", fontsize=20)
+    if title and not save:
+        ax.set_title(f"{title} couplings")
 
-    plt.legend(loc="best", fontsize=22, labelspacing=0.4, borderpad=0.2, fancybox=True)
+    if legend:
+        ax.legend(loc="best", fancybox=True, framealpha=0.5)
+
     if save:
         plt.savefig(f"images/strenght-energy_1nn-{title}.png")
 
         plt.savefig(f"images/strenght-energy_1nn-{title}.eps")
-
-    plt.show()
