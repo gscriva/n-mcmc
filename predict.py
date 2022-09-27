@@ -45,7 +45,7 @@ parser.add_argument(
     "--verbose",
     dest="verbose",
     action="store_true",
-    help="Flag if you want to see prints in MCMC",
+    help="Flag if you want to see model parameters",
 )
 
 
