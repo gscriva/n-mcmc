@@ -31,7 +31,7 @@ def single_spin_flip(
     disable_bar: bool = False,
     save: bool = False,
     save_dir: Optional[str] = None,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> Tuple[np.ndarray, np.ndarray, float]:
     """The Single Spin Flip algorithm exploit a Markov Chain to explore the energy landscape
      of a given hamiltonian at a specified temperature.
 
@@ -46,10 +46,10 @@ def single_spin_flip(
         verbose (bool, optional): Set verbose prints. Defaults to False.
         disable_bar (bool, optional): Set true to disable the bar. Defaults to False.
         save (bool, optional): Save the samples after MCMC. Defaults to False.
-        save_dir (str, optional): Number of steps to skip before starting to save. Default to None.
+        save_dir (str, optional): Path to save, if None save in the working dir. Default to None.
 
     Returns:
-        Tuple[np.ndarray, np.ndarray]: Sample and their energy.
+        Tuple[np.ndarray, np.ndarray]: Sample, energy and acceptance rate.
     """
     start_time = datetime.now()
     print(f"\nStart MCMC simulation {start_time}\nbeta={beta} seed={seed}")
@@ -126,7 +126,7 @@ def single_spin_flip(
         f"Steps: {step + 1:6d}  A_r={accepted / single_step * 100:2.2f}%  E={energies.mean() / spins:2.6f} \u00B1 {(energies / spins).std(ddof=1) / math.sqrt(step+1):2.6f}  [\u03C3={(energies / spins).std(ddof=1):2.6f}  E_min={energies.min() / spins:2.6f}]"
     )
     print(f"Duration {datetime.now() - start_time}")
-    return configs, energies
+    return configs, energies, accepted / single_step * 100
 
 
 def neural_mcmc(
