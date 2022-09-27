@@ -1,8 +1,8 @@
 _target_: src.models.made.Made
-input_size: 100
+input_size: 484
 hidd_layers: 1
-hidd_neurons: 500
-activation: "ReLU"
+hidd_neurons: 2048
+activation: "LeakyReLU"
 natural_ordering: True
 num_masks: 1
 mask_seed: ${seed}
@@ -11,7 +11,7 @@ resample_every: 100
 optim:
   optimizer:
     _target_: torch.optim.Adam
-    lr: 0.001
+    lr: 0.0005421571993772876
     betas: [0.9,0.999]
     eps: 1e-8
     weight_decay: 0

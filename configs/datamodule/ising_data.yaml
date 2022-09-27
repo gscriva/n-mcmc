@@ -4,14 +4,14 @@ datasets:
   train:
     _target_: src.datamodules.datasets.ising_dataset.ISINGDataset
     name: train_100_lattice_2d_ising_spins
-    path: ${work_dir}/train-100spins-1nn-20.npy
+    path: ${work_dir}/data/datasets/484-3nn-100mus/DWAVE-train-484spins-3nn-100mu.npy
     input_size: ${model.input_size}
     model: ${model._target_}
 
   val:
     _target_: src.datamodules.datasets.ising_dataset.ISINGDataset
     name: val_100_lattice_2d_ising_spins
-    path: ${work_dir}/test-100spins-1nn-20.npy
+    path: ${work_dir}/data/datasets/484-3nn-100mus/DWAVE-test-484spins-3nn-100mu.npy
     input_size: ${model.input_size}
     model: ${model._target_}
 

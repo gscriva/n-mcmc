@@ -5,6 +5,6 @@ devices: 'auto'
 accelerator: 'auto'
 
 min_epochs: 1
-max_epochs: 30
+max_epochs: 100
 
 resume_from_checkpoint: null

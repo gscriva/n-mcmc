@@ -17,3 +17,13 @@ model:
   input_size: 100
   hidd_neurons: 512
   activation: "LeakyReLU"
+  optim:
+    optimizer:
+      lr: 0.001
+
+datamodule:
+  datasets:
+    train:
+      path: ${work_dir}/data/datasets/100-1mus/train_1us.npy
+    val:
+      path: ${work_dir}/data/datasets/100-1mus/val_1us.npy
